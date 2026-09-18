@@ -1,0 +1,706 @@
+diff --git a/src/app/(auth)/login/page.tsx b/src/app/(auth)/login/page.tsx
+index b5c1114..fb740aa 100644
+--- a/src/app/(auth)/login/page.tsx
++++ b/src/app/(auth)/login/page.tsx
+@@ -18,6 +18,8 @@ import {
+ import Link from "next/link";
+ import { useRouter } from "next/navigation";
+ import Image from "next/image";
++import { useTheme } from "@/components/theme/ThemeProvider";
++import { Sun } from "lucide-react";
+ 
+ const SIDE_FEATURES = [
+   {
+@@ -44,6 +46,7 @@ const FOOTER_LINKS = ["قوانین و مقررات", "سیاست حریم خص
+ 
+ export default function LoginPage() {
+   const router = useRouter();
++  const { theme, toggleTheme } = useTheme();
+   const [activeTab, setActiveTab] = useState<"password" | "otp">("password");
+   const [phone, setPhone] = useState("");
+   const [password, setPassword] = useState("");
+@@ -111,9 +114,9 @@ export default function LoginPage() {
+         <div className="flex min-h-[100dvh] flex-col items-center justify-start px-5 pt-10 sm:pt-14 lg:pt-16">
+           {/* Logo */}
+           <div className="mb-8 flex flex-col items-center gap-2">
+-            <Leaf className="h-10 w-10 text-primary-light" />
++            <Leaf className="h-10 w-10 text-primary dark:text-primary-light" />
+             <div className="text-center leading-tight">
+-              <h1 className="text-xl font-bold text-white">Beauty Clinic CRM</h1>
++              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Beauty Clinic CRM</h1>
+               <p className="mt-1 text-xs text-gray-400">پلتفرم مدیریت کلینیک‌های زیبایی</p>
+             </div>
+           </div>
+@@ -246,13 +249,13 @@ export default function LoginPage() {
+         </div>
+ 
+         <div className="glass relative hidden overflow-hidden rounded-none px-12 py-14 lg:flex lg:flex-col">
+-          <h1 className="max-w-md text-3xl font-extrabold leading-tight text-white">
++          <h1 className="max-w-md text-3xl font-extrabold leading-tight text-gray-900 dark:text-white">
+             دسترسی امن و سریع
+             <br />
+-            به مدیریت <span className="text-primary-light">کلینیک</span> شما
++            به مدیریت <span className="text-primary-dark dark:text-primary-light">کلینیک</span> شما
+           </h1>
+ 
+-          <p className="mt-4 max-w-md text-sm leading-relaxed text-gray-400">
++          <p className="mt-4 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+             با Beauty Clinic CRM، همه ابزارهای موردنیاز کلینیک‌های زیبایی در یک سیستم یکپارچه و هوشمند در دسترس شماست.
+           </p>
+ 
+@@ -269,13 +272,13 @@ export default function LoginPage() {
+             {SIDE_FEATURES.map((f) => (
+               <div key={f.title} className="text-center">
+                 <f.icon className={`mx-auto mb-2 h-6 w-6 ${f.tone}`} />
+-                <div className="text-xs font-semibold text-gray-100">{f.title}</div>
+-                <p className="mt-1 text-[10px] leading-relaxed text-gray-400">{f.desc}</p>
++                <div className="text-xs font-semibold text-gray-800 dark:text-gray-100">{f.title}</div>
++                <p className="mt-1 text-[10px] leading-relaxed text-gray-500 dark:text-gray-400">{f.desc}</p>
+               </div>
+             ))}
+           </div>
+ 
+-          <div className="mt-5 flex items-center justify-center gap-2 rounded-full bg-primary-light/15 px-4 py-2 text-xs text-primary-light">
++          <div className="mt-5 flex items-center justify-center gap-2 rounded-full bg-primary-light/15 px-4 py-2 text-xs text-primary-dark dark:text-primary-light">
+             <Lock className="h-3.5 w-3.5" />
+             اطلاعات شما نزد ما امن است و به هیچ عنوان در اختیار شخص ثالث قرار نمی‌گیرد.
+           </div>
+@@ -301,18 +304,22 @@ export default function LoginPage() {
+ 
+           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-3 text-center">
+             {FOOTER_LINKS.map((link) => (
+-              <a key={link} href="#" className="transition hover:text-primary-light">
++              <a key={link} href="#" className="transition hover:text-primary-dark dark:hover:text-primary-light">
+                 {link}
+               </a>
+             ))}
+           </nav>
+ 
+           <div className="flex items-center gap-3">
+-            <button className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-gray-300 transition hover:border-primary-light hover:text-primary-light">
+-              <Moon className="h-4 w-4" />
++            <button
++              onClick={toggleTheme}
++              title={theme === "dark" ? "تم روشن" : "تم تیره"}
++              className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/15 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-primary-light"
++            >
++              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+             </button>
+ 
+-            <button className="flex h-9 items-center gap-2 rounded-full border border-white/15 px-4 text-gray-300 transition hover:border-primary-light hover:text-primary-light">
++            <button className="flex h-9 items-center gap-2 rounded-full border border-gray-200 px-4 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/15 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-primary-light">
+               <Globe className="h-4 w-4" />
+               فارسی
+             </button>
+diff --git a/src/app/(patient)/patient/[clinicSlug]/layout.tsx b/src/app/(patient)/patient/[clinicSlug]/layout.tsx
+index 002c4d5..3ff9977 100644
+--- a/src/app/(patient)/patient/[clinicSlug]/layout.tsx
++++ b/src/app/(patient)/patient/[clinicSlug]/layout.tsx
+@@ -23,7 +23,7 @@ export default async function PatientClinicLayout({
+   return (
+     <div dir="rtl" className="min-h-screen">
+       <header className="glass flex items-center justify-between rounded-none px-4 py-3 md:px-8">
+-        <span className="font-bold text-primary-light">
++        <span className="font-bold text-primary-dark dark:text-primary-light">
+           {clinic?.clinicSlug ?? "کلینیک"}
+         </span>
+ 
+diff --git a/src/app/(superadmin)/super-admin/layout.tsx b/src/app/(superadmin)/super-admin/layout.tsx
+index 788b9ec..129c866 100644
+--- a/src/app/(superadmin)/super-admin/layout.tsx
++++ b/src/app/(superadmin)/super-admin/layout.tsx
+@@ -52,15 +52,15 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
+     <>
+       <div className="mb-6 flex items-center justify-between gap-2 lg:justify-start">
+         <div className="text-right leading-tight">
+-          <Leaf className="h-7 w-7 text-primary-light" />
+-          <div className="text-base font-bold text-white">Beauty Clinic CRM</div>
++          <Leaf className="h-7 w-7 text-primary dark:text-primary-light" />
++          <div className="text-base font-bold text-gray-900 dark:text-white">Beauty Clinic CRM</div>
+           <div className="text-[11px] text-gray-400">پنل سوپرادمین</div>
+         </div>
+ 
+         {/* دکمه بستن، فقط موبایل */}
+         <button
+           onClick={() => setIsDrawerOpen(false)}
+-          className="rounded-lg p-2 text-gray-400 hover:bg-white/[0.06] lg:hidden"
++          className="rounded-lg p-2 text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.06] lg:hidden"
+           aria-label="بستن منو"
+         >
+           <X className="h-5 w-5" />
+@@ -94,15 +94,15 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
+           width={120}
+           height={120}
+           unoptimized
+-          className="rounded-full object-cover ring-2 ring-white/10"
++          className="rounded-full object-cover ring-2 ring-gray-100 dark:ring-white/10"
+         />
+       </div>
+ 
+       {/* باکس پشتیبانی */}
+       <div className="glass-strong mt-4 rounded-2xl p-4 text-center">
+-        <div className="text-sm font-semibold text-white">نیاز به کمک دارید؟</div>
+-        <p className="mt-1 text-xs text-gray-400">تیم پشتیبانی ما آماده پاسخگویی است.</p>
+-        <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-primary-light/30 bg-primary/80 py-2.5 text-xs font-medium text-white shadow-glow-primary transition hover:bg-primary">
++        <div className="text-sm font-semibold text-gray-800 dark:text-white">نیاز به کمک دارید؟</div>
++        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">تیم پشتیبانی ما آماده پاسخگویی است.</p>
++        <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-primary-dark py-2.5 text-xs font-medium text-white transition hover:opacity-90 dark:border-primary-light/30 dark:bg-primary/80 dark:shadow-glow-primary dark:hover:bg-primary">
+           <Headset className="h-4 w-4" /> تماس با پشتیبانی
+         </button>
+       </div>
+@@ -114,12 +114,12 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
+       {/* هدر موبایل: لوگو + دکمه همبرگر */}
+       <header className="glass flex items-center justify-between rounded-none px-4 py-3 lg:hidden">
+         <div className="flex items-center gap-2">
+-          <Leaf className="h-6 w-6 text-primary-light" />
+-          <span className="text-sm font-bold text-white">Beauty Clinic CRM</span>
++          <Leaf className="h-6 w-6 text-primary dark:text-primary-light" />
++          <span className="text-sm font-bold text-gray-900 dark:text-white">Beauty Clinic CRM</span>
+         </div>
+         <button
+           onClick={() => setIsDrawerOpen(true)}
+-          className="rounded-lg border border-white/15 p-2 text-gray-200"
++          className="rounded-lg border border-gray-200 p-2 text-gray-600 dark:border-white/15 dark:text-gray-200"
+           aria-label="باز کردن منو"
+         >
+           <Menu className="h-5 w-5" />
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 53efa93..8b406fe 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -9,6 +9,11 @@ body {
+ }
+ 
+ body {
++  background-color: theme("colors.white");
++  color: theme("colors.gray.900");
++}
++
++.dark body {
+   background-color: theme("colors.abyss.950");
+   color: theme("colors.gray.100");
+ }
+@@ -22,14 +27,16 @@ body {
+   display: none; /* Chrome, Safari */
+ }
+ 
+-/* ===================== Liquid Glass Theme ===================== */
++/* =============== تم روشن (طراحی اصلی) + تم تیره (Liquid Glass) =============== */
+ 
+ @layer components {
+-  /* شیشه‌ی تیره: برای سایدبار، تاپ‌بار، مودال‌ها روی بوم تیره */
++  /* حالت روشن: همان ظاهر ساده و تخت اولیه‌ی پروژه (بدون بلور/شفافیت) */
++  /* حالت تیره: شیشه‌ی مات با بلور، برای سایدبار/تاپ‌بار/مودال روی بوم تیره */
+   .glass {
+-    @apply relative isolate border border-white/10 bg-white/[0.06] shadow-glass backdrop-blur-2xl;
++    @apply relative isolate border border-gray-100 bg-white shadow-none transition-colors duration-300;
++    @apply dark:border-white/10 dark:bg-white/[0.06] dark:shadow-glass dark:backdrop-blur-2xl;
+   }
+-  .glass::before {
++  .dark .glass::before {
+     content: "";
+     position: absolute;
+     inset: 0;
+@@ -48,27 +55,52 @@ body {
+     pointer-events: none;
+   }
+ 
+-  /* نسخه‌ی پررنگ‌تر شیشه، برای عناصر برجسته (کارت فعال، مودال) */
++  /* نسخه‌ی پررنگ‌تر: روشن = باکس تیفانی/تیل کم‌رنگ اصلی، تیره = شیشه‌ی برجسته‌تر */
+   .glass-strong {
+-    @apply glass bg-white/[0.1] shadow-glass-lg;
++    @apply relative isolate border-0 bg-primary-light/15 shadow-none transition-colors duration-300;
++    @apply dark:border dark:border-white/10 dark:bg-white/[0.1] dark:shadow-glass-lg dark:backdrop-blur-2xl;
++  }
++  .dark .glass-strong::before {
++    content: "";
++    position: absolute;
++    inset: 0;
++    border-radius: inherit;
++    padding: 1px;
++    background: linear-gradient(
++      135deg,
++      rgba(255, 255, 255, 0.28),
++      rgba(255, 255, 255, 0) 35%,
++      rgba(255, 255, 255, 0) 70%,
++      rgba(255, 255, 255, 0.12)
++    );
++    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
++    -webkit-mask-composite: xor;
++    mask-composite: exclude;
++    pointer-events: none;
+   }
+ 
+-  /* پنل شیشه‌ای روشن: برای بستر محتوای اصلی صفحات (خوانایی متن تیره حفظ می‌شود) */
++  /* بستر محتوای اصلی صفحات: روشن = کاملاً شفاف/هم‌رنگ صفحه (دقیقاً مثل طراحی اولیه)، تیره = پنل شیشه‌ای روشن روی بوم تیره */
+   .glass-content {
+-    @apply relative isolate border border-white/60 bg-white/85 shadow-glass-lg backdrop-blur-2xl;
++    @apply relative isolate border-0 bg-transparent shadow-none transition-colors duration-300;
++    @apply dark:border dark:border-white/60 dark:bg-white/85 dark:text-gray-900 dark:shadow-glass-lg dark:backdrop-blur-2xl;
+   }
+ 
+-  /* ورودی‌های فرم روی بستر شیشه‌ای تیره */
++  /* ورودی‌ها و فیلدهای فرم */
+   .glass-input {
+-    @apply border border-white/10 bg-white/[0.06] text-gray-100 placeholder:text-gray-500 backdrop-blur-xl transition-colors focus:border-primary-light/50 focus:outline-none focus:ring-2 focus:ring-primary-light/20;
++    @apply border border-gray-200 bg-white text-gray-800 shadow-sm placeholder:text-gray-400 transition-colors;
++    @apply focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20;
++    @apply dark:border-white/10 dark:bg-white/[0.06] dark:text-gray-100 dark:shadow-none dark:backdrop-blur-xl dark:placeholder:text-gray-500;
++    @apply dark:focus:border-primary-light/50 dark:focus:ring-primary-light/20;
+   }
+ 
+-  /* آیتم ناوبری روی سایدبار/تاپ‌بار شیشه‌ای */
++  /* آیتم ناوبری روی سایدبار/تاپ‌بار */
+   .glass-nav-item {
+-    @apply text-gray-300 transition-colors hover:bg-white/[0.06] hover:text-white;
++    @apply text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900;
++    @apply dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white;
+   }
+   .glass-nav-item.active {
+-    @apply bg-primary-light/15 font-medium text-primary-light;
++    @apply bg-primary-light/15 font-medium text-primary-dark;
++    @apply dark:bg-primary-light/15 dark:text-primary-light;
+   }
+ }
+ 
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index 6b71b20..b890604 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -2,6 +2,9 @@ import type { Metadata } from "next";
+ import "./globals.css";
+ import { Providers } from "./providers";
+ import { AuroraBackground } from "@/components/ui/AuroraBackground";
++import { ThemeProvider } from "@/components/theme/ThemeProvider";
++import { ThemeToggle } from "@/components/theme/ThemeToggle";
++import { themeInitScript } from "@/components/theme/theme-script";
+ 
+ // TODO: فونت Vazirmatn را داخل src/styles/fonts قرار بده و اینجا با next/font/local لود کن
+ import localFont from "next/font/local";
+@@ -33,10 +36,20 @@ export default function RootLayout({
+   children: React.ReactNode;
+ }>) {
+   return (
+-    <html lang="fa" dir="rtl">
+-      <body className={`${vazir.className} bg-abyss-950 text-gray-100 antialiased`}>
+-        <AuroraBackground />
+-        <Providers>{children}</Providers>
++    <html lang="fa" dir="rtl" suppressHydrationWarning>
++      <head>
++        {/* قبل از رندر صفحه اجرا می‌شود تا تم ذخیره‌شده بدون فلش اعمال شود */}
++        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
++      </head>
++      <body
++        className={`${vazir.className} bg-white text-gray-900 antialiased transition-colors duration-300 dark:bg-abyss-950 dark:text-gray-100`}
++        suppressHydrationWarning
++      >
++        <ThemeProvider>
++          <AuroraBackground />
++          <Providers>{children}</Providers>
++          <ThemeToggle />
++        </ThemeProvider>
+       </body>
+     </html>
+   );
+diff --git a/src/components/layout/ClinicSidebar.tsx b/src/components/layout/ClinicSidebar.tsx
+index e8f4611..6b359bf 100644
+--- a/src/components/layout/ClinicSidebar.tsx
++++ b/src/components/layout/ClinicSidebar.tsx
+@@ -29,9 +29,9 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+   return (
+     <aside className="glass flex h-full w-full shrink-0 flex-col rounded-none p-5 lg:h-screen lg:w-64 lg:sticky lg:top-0 lg:rounded-none">
+       <div className="mb-6 flex items-center justify-center gap-2 lg:justify-strat">
+-        <Leaf className="h-7 w-7 text-primary-light" />
++        <Leaf className="h-7 w-7 text-primary dark:text-primary-light" />
+         <div className="text-left leading-tight">
+-          <div className="text-base font-bold text-white">Beauty Clinic CRM</div>
++          <div className="text-base font-bold text-gray-900 dark:text-white">Beauty Clinic CRM</div>
+           <div className="text-[11px] text-gray-400">پلتفرم مدیریت کلینیک زیبایی</div>
+         </div>
+       </div>
+@@ -78,7 +78,7 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+               </button>
+ 
+               {isOpen && (
+-                <div className="mr-1 mt-1 flex flex-col gap-0.5 border-r border-white/10 pr-3">
++                <div className="mr-1 mt-1 flex flex-col gap-0.5 border-r border-gray-100 pr-3 dark:border-white/10">
+                   {item.children!
+                     .filter((child) => child.roles.includes(role))
+                     .map((child) => {
+@@ -110,14 +110,14 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+           width={120}
+           height={120}
+           unoptimized
+-          className="rounded-full object-cover ring-2 ring-white/10"
++          className="rounded-full object-cover ring-2 ring-gray-100 dark:ring-white/10"
+         />
+       </div>
+ 
+       <div className="glass-strong mt-3 rounded-2xl p-4 text-center">
+-        <div className="text-sm font-semibold text-white">نسخه حرفه‌ای</div>
+-        <p className="mt-1 text-xs text-gray-400">همه امکانات برای رشد کسب‌وکار شما</p>
+-        <button className="mt-3 w-full rounded-xl border border-primary-light/30 bg-primary/80 py-2.5 text-xs font-medium text-white shadow-glow-primary transition hover:bg-primary">
++        <div className="text-sm font-semibold text-gray-800 dark:text-white">نسخه حرفه‌ای</div>
++        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">همه امکانات برای رشد کسب‌وکار شما</p>
++        <button className="mt-3 w-full rounded-xl border border-transparent bg-primary-dark py-2.5 text-xs font-medium text-white transition hover:opacity-90 dark:border-primary-light/30 dark:bg-primary/80 dark:shadow-glow-primary dark:hover:bg-primary">
+           ارتقای پلن
+         </button>
+       </div>
+diff --git a/src/components/layout/ClinicSwitcher.tsx b/src/components/layout/ClinicSwitcher.tsx
+index 7387b51..264e977 100644
+--- a/src/components/layout/ClinicSwitcher.tsx
++++ b/src/components/layout/ClinicSwitcher.tsx
+@@ -26,7 +26,7 @@ export function ClinicSwitcher({ currentSlug, clinics, basePath }: ClinicSwitche
+     <select
+       value={currentSlug}
+       onChange={(e) => router.push(`/${basePath}/${e.target.value}/dashboard`)}
+-      className="glass-input rounded-lg px-3 py-1.5 text-sm [&>option]:bg-abyss-900 [&>option]:text-gray-100"
++      className="glass-input rounded-lg px-3 py-1.5 text-sm [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-abyss-900 dark:[&>option]:text-gray-100"
+     >
+       {clinics.map((clinic) => (
+         <option key={clinic.slug} value={clinic.slug}>
+diff --git a/src/components/layout/ClinicTopbar.tsx b/src/components/layout/ClinicTopbar.tsx
+index 38992f0..3f7b115 100644
+--- a/src/components/layout/ClinicTopbar.tsx
++++ b/src/components/layout/ClinicTopbar.tsx
+@@ -46,7 +46,7 @@ export function ClinicTopbar({
+             <div className="flex items-center gap-6">
+                 <button
+                     onClick={onToggleSidebar}
+-                    className="text-gray-300 transition hover:text-primary-light"
++                    className="text-gray-600 transition hover:text-primary dark:text-gray-300 dark:hover:text-primary-light"
+                 >
+                     <Menu className="h-6 w-6" />
+                 </button>
+@@ -58,13 +58,13 @@ export function ClinicTopbar({
+                 <div className="glass-input flex h-10 items-center overflow-hidden rounded-xl">
+                     <button
+                         onClick={goToToday}
+-                        className="flex items-center gap-2 px-4 text-sm font-medium text-gray-100 hover:bg-white/[0.06]"
++                        className="flex items-center gap-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-white/[0.06]"
+                     >
+                         <ChevronDown className="h-4 w-4" />
+                         امروز
+                     </button>
+ 
+-                    <div className="h-5 w-px bg-white/10" />
++                    <div className="h-5 w-px bg-gray-200 dark:bg-white/10" />
+ 
+                     <DatePicker
+                         value={selectedDate}
+@@ -75,10 +75,10 @@ export function ClinicTopbar({
+                         render={(value, openCalendar) => (
+                             <button
+                                 onClick={openCalendar}
+-                                className="flex items-center gap-2 px-4 text-sm text-gray-300 hover:bg-white/[0.06]"
++                                className="flex items-center gap-2 px-4 text-sm text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.06]"
+                             >
+                                 {selectedDate ? selectedDate.format("YYYY/MM/DD") : "انتخاب تاریخ"}
+-                                <CalendarDays className="h-4 w-4 text-gray-400" />
++                                <CalendarDays className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                             </button>
+                         )}
+                     />
+@@ -86,16 +86,16 @@ export function ClinicTopbar({
+ 
+                 {/* تنظیمات */}
+                 {showSettingsIcon && (
+-                    <button className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-300 transition hover:bg-white/[0.08] hover:text-primary-light">
++                    <button className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-50 hover:text-primary dark:text-gray-300 dark:hover:bg-white/[0.08] dark:hover:text-primary-light">
+                         <Settings className="h-5 w-5" />
+                     </button>
+                 )}
+ 
+                 {/* اعلان */}
+-                <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-300 transition hover:bg-white/[0.08] hover:text-primary-light">
++                <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-50 hover:text-primary dark:text-gray-300 dark:hover:bg-white/[0.08] dark:hover:text-primary-light">
+                     <Bell className="h-5 w-5" />
+                     {notificationCount > 0 && (
+-                        <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-500 text-[9px] font-medium text-white ring-2 ring-abyss-900">
++                        <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-500 text-[9px] font-medium text-white ring-2 ring-white dark:ring-abyss-900">
+                             {notificationCount.toLocaleString("fa-IR")}
+                         </span>
+                     )}
+@@ -104,10 +104,10 @@ export function ClinicTopbar({
+ 
+             {/* اطلاعات کاربر */}
+             <div className="flex items-center gap-3">
+-                <ChevronDown className="h-4 w-4 text-gray-500" />
++                <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+ 
+                 <div className="hidden text-right sm:block">
+-                    <p className="text-sm font-semibold text-gray-100">{userName}</p>
++                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{userName}</p>
+                     <p className="text-xs text-gray-400">{roleLabel}</p>
+                 </div>
+ 
+@@ -117,7 +117,7 @@ export function ClinicTopbar({
+                     width={50}
+                     height={50}
+                     unoptimized
+-                    className="rounded-full object-cover ring-2 ring-white/10"
++                    className="rounded-full object-cover ring-2 ring-gray-100 dark:ring-white/10"
+                 />
+             </div>
+         </header>
+diff --git a/src/components/layout/PatientHeader.tsx b/src/components/layout/PatientHeader.tsx
+index b0100c3..cd249a5 100644
+--- a/src/components/layout/PatientHeader.tsx
++++ b/src/components/layout/PatientHeader.tsx
+@@ -21,10 +21,10 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
+         <header className="glass flex flex-wrap items-center justify-between gap-4 rounded-none px-4 py-3 md:px-8">
+             {/* لوگو - سمت راست */}
+             <div className="order-1 flex items-center gap-2">
+-                <Leaf className="h-7 w-7 text-primary-light" />
++                <Leaf className="h-7 w-7 text-primary dark:text-primary-light" />
+ 
+                 <div className="text-left leading-tight">
+-                    <div className="text-base font-bold text-white">Beauty Clinic CRM</div>
++                    <div className="text-base font-bold text-gray-900 dark:text-white">Beauty Clinic CRM</div>
+                     <div className="text-[11px] text-gray-400">پلتفرم مدیریت کلینیک زیبایی</div>
+                 </div>
+             </div>
+@@ -39,8 +39,8 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
+                             key={item.href}
+                             href={href}
+                             className={`whitespace-nowrap pb-1 ${isActive
+-                                    ? "border-b-2 border-primary-light font-medium text-primary-light"
+-                                    : "text-gray-400 hover:text-white"
++                                    ? "border-b-2 border-primary font-medium text-primary-dark dark:border-primary-light dark:text-primary-light"
++                                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                                 }`}
+                         >
+                             {item.label}
+@@ -51,13 +51,13 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
+ 
+             {/* اعلان‌ها و پروفایل - سمت چپ */}
+             <div className="order-2 flex items-center gap-4 md:order-3">
+-                <button className="relative text-gray-300 hover:text-white">
++                <button className="relative text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">
+                     <Bell className="h-5 w-5" />
+-                    <span className="absolute -top-1.5 -left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] text-white ring-2 ring-abyss-900">
++                    <span className="absolute -top-1.5 -left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] text-white ring-2 ring-white dark:ring-abyss-900">
+                         ۲
+                     </span>
+                 </button>
+-                <button className="text-gray-300 hover:text-white">
++                <button className="text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">
+                     <MessageSquare className="h-5 w-5" />
+                 </button>
+                 <button className="flex items-center gap-1.5">
+@@ -67,10 +67,10 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
+                         width={30}
+                         height={30}
+                         unoptimized
+-                        className="rounded-full object-cover ring-2 ring-white/10"
++                        className="rounded-full object-cover ring-2 ring-gray-100 dark:ring-white/10"
+                     />
+-                    <span className="hidden text-sm font-medium text-gray-200 sm:block">سارا محمدی</span>
+-                    <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
++                    <span className="hidden text-sm font-medium text-gray-700 sm:block dark:text-gray-200">سارا محمدی</span>
++                    <ChevronDown className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+                 </button>
+             </div>
+         </header>
+diff --git a/src/components/layout/ReceptionSidebar.tsx b/src/components/layout/ReceptionSidebar.tsx
+index 00c4d8d..07fd4c2 100644
+--- a/src/components/layout/ReceptionSidebar.tsx
++++ b/src/components/layout/ReceptionSidebar.tsx
+@@ -19,15 +19,15 @@ export function ReceptionSidebar({ clinicSlug, onNavigate }: ReceptionSidebarPro
+   return (
+     <aside className="glass flex h-full w-full shrink-0 flex-col rounded-none p-5 lg:h-screen lg:w-64 lg:sticky lg:top-0 lg:rounded-none">
+       <div className="mb-4 flex items-center justify-center gap-2 lg:justify-end">
+-        <Leaf className="h-7 w-7 text-primary-light" />
++        <Leaf className="h-7 w-7 text-primary dark:text-primary-light" />
+         <div className="text-left leading-tight">
+-          <div className="text-base font-bold text-white">Beauty Clinic CRM</div>
++          <div className="text-base font-bold text-gray-900 dark:text-white">Beauty Clinic CRM</div>
+           <div className="text-[11px] text-gray-400">پلتفرم مدیریت کلینیک زیبایی</div>
+         </div>
+       </div>
+ 
+       {/* برچسب پنل فعلی */}
+-      <div className="glass-strong mb-3 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-primary-light">
++      <div className="glass-strong mb-3 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-primary-dark dark:text-primary-light">
+         <Headset className="h-4 w-4" /> پنل منشی / نوبت‌دهی
+       </div>
+ 
+@@ -56,14 +56,14 @@ export function ReceptionSidebar({ clinicSlug, onNavigate }: ReceptionSidebarPro
+           width={120}
+           height={120}
+           unoptimized
+-          className="rounded-full object-cover ring-2 ring-white/10"
++          className="rounded-full object-cover ring-2 ring-gray-100 dark:ring-white/10"
+         />
+       </div>
+ 
+       <div className="glass-strong mt-3 rounded-2xl p-4 text-center">
+-        <div className="text-sm font-semibold text-white">نسخه حرفه‌ای</div>
+-        <p className="mt-1 text-xs text-gray-400">همه امکانات برای رشد کسب‌وکار شما</p>
+-        <button className="mt-3 w-full rounded-xl border border-primary-light/30 bg-primary/80 py-2.5 text-xs font-medium text-white shadow-glow-primary transition hover:bg-primary">
++        <div className="text-sm font-semibold text-gray-800 dark:text-white">نسخه حرفه‌ای</div>
++        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">همه امکانات برای رشد کسب‌وکار شما</p>
++        <button className="mt-3 w-full rounded-xl border border-transparent bg-primary-dark py-2.5 text-xs font-medium text-white transition hover:opacity-90 dark:border-primary-light/30 dark:bg-primary/80 dark:shadow-glow-primary dark:hover:bg-primary">
+           ارتقای پلن
+         </button>
+       </div>
+diff --git a/src/components/theme/ThemeProvider.tsx b/src/components/theme/ThemeProvider.tsx
+new file mode 100644
+index 0000000..f8f8af1
+--- /dev/null
++++ b/src/components/theme/ThemeProvider.tsx
+@@ -0,0 +1,47 @@
++"use client";
++
++import { createContext, useContext, useEffect, useState, ReactNode } from "react";
++
++type Theme = "light" | "dark";
++
++interface ThemeContextValue {
++  theme: Theme;
++  toggleTheme: () => void;
++  setTheme: (theme: Theme) => void;
++}
++
++const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
++
++export function ThemeProvider({ children }: { children: ReactNode }) {
++  // مقدار اولیه از روی کلاسی که theme-script قبل از هیدریشن روی html گذاشته خوانده می‌شود
++  const [theme, setThemeState] = useState<Theme>("light");
++
++  useEffect(() => {
++    const isDark = document.documentElement.classList.contains("dark");
++    setThemeState(isDark ? "dark" : "light");
++  }, []);
++
++  const applyTheme = (next: Theme) => {
++    setThemeState(next);
++    document.documentElement.classList.toggle("dark", next === "dark");
++    try {
++      localStorage.setItem("theme", next);
++    } catch {
++      // localStorage در دسترس نیست، مشکلی نیست
++    }
++  };
++
++  const toggleTheme = () => applyTheme(theme === "dark" ? "light" : "dark");
++
++  return (
++    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme: applyTheme }}>
++      {children}
++    </ThemeContext.Provider>
++  );
++}
++
++export function useTheme() {
++  const ctx = useContext(ThemeContext);
++  if (!ctx) throw new Error("useTheme باید داخل ThemeProvider استفاده شود");
++  return ctx;
++}
+diff --git a/src/components/theme/ThemeToggle.tsx b/src/components/theme/ThemeToggle.tsx
+new file mode 100644
+index 0000000..3fc76a5
+--- /dev/null
++++ b/src/components/theme/ThemeToggle.tsx
+@@ -0,0 +1,22 @@
++"use client";
++
++import { Moon, Sun } from "lucide-react";
++import { useTheme } from "./ThemeProvider";
++
++export function ThemeToggle() {
++  const { theme, toggleTheme } = useTheme();
++  const isDark = theme === "dark";
++
++  return (
++    <button
++      onClick={toggleTheme}
++      aria-label={isDark ? "تغییر به تم روشن" : "تغییر به تم تیره"}
++      title={isDark ? "تم روشن" : "تم تیره (Liquid Glass)"}
++      className="fixed bottom-5 left-5 z-[60] flex h-12 w-12 items-center justify-center rounded-full border shadow-glass-sm backdrop-blur-xl transition-all duration-300
++      border-gray-200 bg-white text-gray-600 hover:border-primary hover:text-primary
++      dark:border-white/15 dark:bg-white/[0.08] dark:text-gray-200 dark:hover:border-primary-light dark:hover:text-primary-light"
++    >
++      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
++    </button>
++  );
++}
+diff --git a/src/components/theme/theme-script.ts b/src/components/theme/theme-script.ts
+new file mode 100644
+index 0000000..04f026e
+--- /dev/null
++++ b/src/components/theme/theme-script.ts
+@@ -0,0 +1,14 @@
++// این اسکریپت باید قبل از رندر شدن محتوا اجرا شود تا از فلش‌زدن تم اشتباه جلوگیری کند.
++export const themeInitScript = `
++(function () {
++  try {
++    var stored = localStorage.getItem('theme');
++    var theme = stored === 'dark' || stored === 'light' ? stored : 'light';
++    if (theme === 'dark') {
++      document.documentElement.classList.add('dark');
++    } else {
++      document.documentElement.classList.remove('dark');
++    }
++  } catch (e) {}
++})();
++`;
+diff --git a/src/components/ui/AuroraBackground.tsx b/src/components/ui/AuroraBackground.tsx
+index 3afb391..08e055a 100644
+--- a/src/components/ui/AuroraBackground.tsx
++++ b/src/components/ui/AuroraBackground.tsx
+@@ -2,7 +2,7 @@ export function AuroraBackground() {
+   return (
+     <div
+       aria-hidden="true"
+-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-abyss-950"
++      className="pointer-events-none fixed inset-0 -z-10 hidden overflow-hidden bg-abyss-950 dark:block"
+     >
+       {/* شبکه‌ی ظریف برای عمق بیشتر */}
+       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:44px_44px]" />
+@@ -16,4 +16,4 @@ export function AuroraBackground() {
+       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(5,7,13,0.55)_75%,rgba(5,7,13,0.85)_100%)]" />
+     </div>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/src/components/ui/Button.tsx b/src/components/ui/Button.tsx
+index 68c805c..e762b4d 100644
+--- a/src/components/ui/Button.tsx
++++ b/src/components/ui/Button.tsx
+@@ -9,16 +9,16 @@ export function Button({ variant = "primary", className, ...props }: ButtonProps
+   return (
+     <button
+       className={clsx(
+-        "rounded-xl px-4 py-2 text-sm font-medium backdrop-blur-xl transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50",
+-        "border active:scale-[0.98]",
++        "rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50",
++        "border active:scale-[0.98] dark:backdrop-blur-xl",
+         variant === "primary" &&
+-          "border-primary-light/30 bg-primary/80 text-white shadow-glow-primary hover:bg-primary",
++          "border-transparent bg-primary text-white hover:bg-primary-dark dark:border-primary-light/30 dark:bg-primary/80 dark:shadow-glow-primary dark:hover:bg-primary",
+         variant === "secondary" &&
+-          "border-white/15 bg-white/[0.08] text-gray-100 hover:bg-white/[0.14]",
++          "border-transparent bg-secondary-blue text-gray-900 hover:opacity-90 dark:border-white/15 dark:bg-white/[0.08] dark:text-gray-100 dark:hover:bg-white/[0.14]",
+         variant === "danger" &&
+-          "border-danger/30 bg-danger/80 text-white hover:bg-danger",
++          "border-transparent bg-danger text-white hover:opacity-90 dark:border-danger/30 dark:bg-danger/80 dark:hover:bg-danger",
+         variant === "ghost" &&
+-          "border-transparent bg-transparent text-gray-300 hover:border-white/10 hover:bg-white/[0.06]",
++          "border-transparent bg-transparent text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:border-white/10 dark:hover:bg-white/[0.06]",
+         className
+       )}
+       {...props}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 73fbed4..02cb4a1 100644
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -1,6 +1,7 @@
+ import type { Config } from "tailwindcss";
+ 
+ const config: Config = {
++  darkMode: "class",
+   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+   theme: {
+     extend: {

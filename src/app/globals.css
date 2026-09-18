@@ -1,0 +1,314 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background-color: theme("colors.white");
+  color: theme("colors.gray.900");
+}
+
+.dark body {
+  background-color: theme("colors.abyss.950");
+  color: theme("colors.gray.100");
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE و Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* =============== تم روشن (طراحی اصلی) + تم تیره (Liquid Glass) =============== */
+
+@layer components {
+  /* حالت روشن: همان ظاهر ساده و تخت اولیه‌ی پروژه (بدون بلور/شفافیت) */
+  /* حالت تیره: شیشه‌ی مات با بلور، برای سایدبار/تاپ‌بار/مودال روی بوم تیره */
+  .glass {
+    @apply relative isolate border border-gray-100 bg-white shadow-none transition-colors duration-300;
+    @apply dark:border-white/10 dark:bg-white/[0.06] dark:shadow-glass dark:backdrop-blur-2xl;
+  }
+  .dark .glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0) 35%,
+      rgba(255, 255, 255, 0) 70%,
+      rgba(255, 255, 255, 0.12)
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* نسخه‌ی پررنگ‌تر: روشن = باکس تیفانی/تیل کم‌رنگ اصلی، تیره = شیشه‌ی برجسته‌تر */
+  .glass-strong {
+    @apply relative isolate border-0 bg-primary-light/15 shadow-none transition-colors duration-300;
+    @apply dark:border dark:border-white/10 dark:bg-white/[0.1] dark:shadow-glass-lg dark:backdrop-blur-2xl;
+  }
+  .dark .glass-strong::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0) 35%,
+      rgba(255, 255, 255, 0) 70%,
+      rgba(255, 255, 255, 0.12)
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* بستر محتوای اصلی صفحات: روشن = کاملاً شفاف/هم‌رنگ صفحه (دقیقاً مثل طراحی اولیه)، تیره = پنل شیشه‌ای روشن روی بوم تیره */
+  .glass-content {
+    @apply relative isolate border-0 bg-transparent shadow-none transition-colors duration-300;
+    @apply dark:border dark:border-white/60 dark:bg-white/85 dark:text-gray-900 dark:shadow-glass-lg dark:backdrop-blur-2xl;
+  }
+
+  /* ورودی‌ها و فیلدهای فرم */
+  .glass-input {
+    @apply border border-gray-200 bg-white text-gray-800 shadow-sm placeholder:text-gray-400 transition-colors;
+    @apply focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply dark:border-white/10 dark:bg-white/[0.06] dark:text-gray-100 dark:shadow-none dark:backdrop-blur-xl dark:placeholder:text-gray-500;
+    @apply dark:focus:border-primary-light/50 dark:focus:ring-primary-light/20;
+  }
+
+  /* آیتم ناوبری روی سایدبار/تاپ‌بار */
+ /* ==================== Navigation Items ==================== */
+
+.glass-nav-item {
+  @apply relative overflow-hidden;
+  @apply text-gray-600;
+  @apply transition-all duration-300 ease-out;
+  @apply hover:text-gray-900;
+
+  @apply dark:text-gray-300;
+  @apply dark:hover:text-white;
+}
+
+/* نور نرم هنگام Hover */
+.glass-nav-item::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  border-radius: inherit;
+
+  background: linear-gradient(
+    90deg,
+    rgba(20, 184, 166, 0.10),
+    rgba(20, 184, 166, 0.04),
+    transparent
+  );
+
+  opacity: 0;
+
+  transform: translateX(16px);
+
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+
+  pointer-events: none;
+}
+
+/* خط کناری */
+.glass-nav-item::after {
+  content: "";
+
+  position: absolute;
+  right: 0;
+  top: 20%;
+
+  width: 3px;
+  height: 60%;
+
+  border-radius: 999px;
+
+  background: #14b8a6;
+
+  transform: scaleY(0);
+
+  transition: transform 0.3s ease;
+
+  pointer-events: none;
+}
+
+/* Hover */
+.glass-nav-item:hover {
+  transform: translateX(-3px);
+
+  background: rgba(20, 184, 166, 0.06);
+
+  box-shadow:
+    0 8px 20px rgba(20, 184, 166, 0.06);
+}
+
+/* Dark Hover */
+.dark .glass-nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* فعال شدن نور */
+.glass-nav-item:hover::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* فعال شدن خط */
+.glass-nav-item:hover::after {
+  transform: scaleY(1);
+}
+
+/* محتوا بالای افکت */
+.glass-nav-item > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* انیمیشن آیکون */
+.glass-nav-item svg {
+  position: relative;
+  z-index: 1;
+
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease;
+}
+
+.glass-nav-item:hover svg {
+  transform: scale(1.12);
+  color: #14b8a6;
+}
+
+/* ==================== Active Item ==================== */
+
+.glass-nav-item.active {
+  @apply bg-primary-light/15;
+  @apply font-medium text-primary-dark;
+
+  box-shadow:
+    0 4px 15px rgba(20, 184, 166, 0.06);
+}
+
+.glass-nav-item.active::after {
+  transform: scaleY(1);
+}
+
+.dark .glass-nav-item.active {
+  @apply bg-primary-light/15;
+  @apply text-primary-light;
+}
+
+.dark .glass-nav-item.active svg {
+  color: #14b8a6;
+}
+}
+
+/* بوم پس‌زمینه‌ی متحرک با حباب‌های نوری (Aurora) */
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  will-change: transform;
+}
+
+/* اسکرول‌بار نازک و هماهنگ با تم تیره، برای سطوح شیشه‌ای */
+.glass-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.glass-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+.glass-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* =====================================================
+   react-multi-date-picker (تقویم جلالی) — تم تیره برای
+   پاپ‌آپ‌های تاریخ/ساعت در فرم‌های مختلف (درخواست نوبت بیمار،
+   تاریخ تولد مراجعه‌کننده و مشابه). به‌عمد به‌جای styled-jsx در
+   خودِ صفحات اینجا گذاشته شده چون babel-plugin-styled-jsx
+   className‌های چندخطیِ موجود در آن فایل‌ها را به رشته‌ی JS
+   نامعتبر تبدیل می‌کند.
+   ===================================================== */
+.patient-appointment-picker,
+.patient-form-picker {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.dark .patient-appointment-picker,
+.dark .patient-form-picker {
+  background: #11151c !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .patient-appointment-picker .rmdp-header,
+.dark .patient-form-picker .rmdp-header,
+.dark .patient-appointment-picker .rmdp-header-values,
+.dark .patient-form-picker .rmdp-header-values,
+.dark .patient-appointment-picker .rmdp-day span,
+.dark .patient-form-picker .rmdp-day span {
+  color: #f3f4f6 !important;
+}
+
+.dark .patient-appointment-picker .rmdp-week-day,
+.dark .patient-form-picker .rmdp-week-day {
+  color: #9ca3af !important;
+}
+
+.dark .patient-appointment-picker .rmdp-day:not(.rmdp-disabled):not(.rmdp-day-hidden) span:hover,
+.dark .patient-form-picker .rmdp-day:not(.rmdp-disabled):not(.rmdp-day-hidden) span:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.patient-appointment-picker .rmdp-day.rmdp-selected span,
+.patient-form-picker .rmdp-day.rmdp-selected span {
+  background: var(--color-primary, #14b8a6) !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+}
+
+.dark .patient-appointment-picker .rmdp-arrow,
+.dark .patient-form-picker .rmdp-arrow {
+  border-color: #9ca3af !important;
+}
+
+.dark .patient-appointment-picker .rmdp-time-picker div input {
+  background: transparent !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .patient-appointment-picker .rmdp-time-picker div .rmdp-arrow-container svg,
+.dark .patient-appointment-picker .rmdp-time-picker div .rmdp-arrow {
+  border-color: #9ca3af !important;
+}

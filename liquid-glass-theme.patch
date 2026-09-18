@@ -1,0 +1,860 @@
+diff --git a/src/app/(auth)/login/page.tsx b/src/app/(auth)/login/page.tsx
+index 1e24f29..b5c1114 100644
+--- a/src/app/(auth)/login/page.tsx
++++ b/src/app/(auth)/login/page.tsx
+@@ -106,20 +106,20 @@ export default function LoginPage() {
+   }
+ 
+   return (
+-    <div className="flex min-h-screen flex-col bg-white">
++    <div className="flex min-h-screen flex-col">
+       <div className="grid flex-1 lg:grid-cols-2">
+-        <div className="flex min-h-[100dvh] flex-col items-center justify-start bg-white px-5 pt-10 sm:pt-14 lg:pt-16">
++        <div className="flex min-h-[100dvh] flex-col items-center justify-start px-5 pt-10 sm:pt-14 lg:pt-16">
+           {/* Logo */}
+           <div className="mb-8 flex flex-col items-center gap-2">
+-            <Leaf className="h-10 w-10 text-primary" />
++            <Leaf className="h-10 w-10 text-primary-light" />
+             <div className="text-center leading-tight">
+-              <h1 className="text-xl font-bold text-gray-900">Beauty Clinic CRM</h1>
++              <h1 className="text-xl font-bold text-white">Beauty Clinic CRM</h1>
+               <p className="mt-1 text-xs text-gray-400">پلتفرم مدیریت کلینیک‌های زیبایی</p>
+             </div>
+           </div>
+ 
+           {/* Login Card */}
+-          <div className="w-full max-w-lg rounded-3xl border border-gray-100 bg-white p-5 shadow-xl sm:p-8">
++          <div className="glass-content w-full max-w-lg rounded-3xl p-5 text-gray-900 sm:p-8">
+             {/* Tabs */}
+             <div className="mb-7 flex border-b border-gray-100 text-xs sm:text-sm">
+               <button
+@@ -245,14 +245,14 @@ export default function LoginPage() {
+           </div>
+         </div>
+ 
+-        <div className="relative hidden overflow-hidden bg-gradient-to-bl from-primary-light/30 via-primary-light/10 to-white/50 px-12 py-14 lg:flex lg:flex-col">
+-          <h1 className="max-w-md text-3xl font-extrabold leading-tight text-gray-900">
++        <div className="glass relative hidden overflow-hidden rounded-none px-12 py-14 lg:flex lg:flex-col">
++          <h1 className="max-w-md text-3xl font-extrabold leading-tight text-white">
+             دسترسی امن و سریع
+             <br />
+-            به مدیریت <span className="text-primary-dark">کلینیک</span> شما
++            به مدیریت <span className="text-primary-light">کلینیک</span> شما
+           </h1>
+ 
+-          <p className="mt-4 max-w-md text-sm leading-relaxed text-gray-500">
++          <p className="mt-4 max-w-md text-sm leading-relaxed text-gray-400">
+             با Beauty Clinic CRM، همه ابزارهای موردنیاز کلینیک‌های زیبایی در یک سیستم یکپارچه و هوشمند در دسترس شماست.
+           </p>
+ 
+@@ -265,17 +265,17 @@ export default function LoginPage() {
+             className="w-full max-w-lg object-contain "
+           />
+ 
+-          <div className="mt-14 grid grid-cols-3 gap-6 rounded-2xl bg-white p-5 shadow-lg">
++          <div className="glass-strong mt-14 grid grid-cols-3 gap-6 rounded-2xl p-5">
+             {SIDE_FEATURES.map((f) => (
+               <div key={f.title} className="text-center">
+                 <f.icon className={`mx-auto mb-2 h-6 w-6 ${f.tone}`} />
+-                <div className="text-xs font-semibold text-gray-800">{f.title}</div>
++                <div className="text-xs font-semibold text-gray-100">{f.title}</div>
+                 <p className="mt-1 text-[10px] leading-relaxed text-gray-400">{f.desc}</p>
+               </div>
+             ))}
+           </div>
+ 
+-          <div className="mt-5 flex items-center justify-center gap-2 rounded-full bg-primary-light/15 px-4 py-2 text-xs text-primary-dark">
++          <div className="mt-5 flex items-center justify-center gap-2 rounded-full bg-primary-light/15 px-4 py-2 text-xs text-primary-light">
+             <Lock className="h-3.5 w-3.5" />
+             اطلاعات شما نزد ما امن است و به هیچ عنوان در اختیار شخص ثالث قرار نمی‌گیرد.
+           </div>
+@@ -283,7 +283,7 @@ export default function LoginPage() {
+       </div>
+ 
+       {/* فوتر */}
+-      <footer className="border-t border-gray-100 px-5 py-6 text-xs text-gray-400 sm:px-8 md:px-12">
++      <footer className="glass rounded-none px-5 py-6 text-xs text-gray-400 sm:px-8 md:px-12">
+         <div className="flex flex-col items-center gap-5 md:flex-row md:justify-between">
+           <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-3">
+             <Image
+@@ -301,18 +301,18 @@ export default function LoginPage() {
+ 
+           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-3 text-center">
+             {FOOTER_LINKS.map((link) => (
+-              <a key={link} href="#" className="transition hover:text-primary-dark">
++              <a key={link} href="#" className="transition hover:text-primary-light">
+                 {link}
+               </a>
+             ))}
+           </nav>
+ 
+           <div className="flex items-center gap-3">
+-            <button className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 transition hover:border-primary">
++            <button className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-gray-300 transition hover:border-primary-light hover:text-primary-light">
+               <Moon className="h-4 w-4" />
+             </button>
+ 
+-            <button className="flex h-9 items-center gap-2 rounded-full border border-gray-200 px-4 transition hover:border-primary">
++            <button className="flex h-9 items-center gap-2 rounded-full border border-white/15 px-4 text-gray-300 transition hover:border-primary-light hover:text-primary-light">
+               <Globe className="h-4 w-4" />
+               فارسی
+             </button>
+diff --git a/src/app/(auth)/otp/OtpForm.tsx b/src/app/(auth)/otp/OtpForm.tsx
+index 7d3abe1..006a0e0 100644
+--- a/src/app/(auth)/otp/OtpForm.tsx
++++ b/src/app/(auth)/otp/OtpForm.tsx
+@@ -53,9 +53,9 @@ export default function OtpForm() {
+   return (
+     <div
+       dir="rtl"
+-      className="flex min-h-screen items-center justify-center bg-white px-5"
++      className="flex min-h-screen items-center justify-center px-5"
+     >
+-      <div className="w-full max-w-sm rounded-3xl border border-gray-100 p-6 shadow-xl">
++      <div className="glass-content w-full max-w-sm rounded-3xl p-6 text-gray-900">
+         <h1 className="mb-2 text-xl font-bold text-gray-900">
+           تایید کد ورود
+         </h1>
+diff --git a/src/app/(auth)/otp/page.tsx b/src/app/(auth)/otp/page.tsx
+index ca4df06..537cc0b 100644
+--- a/src/app/(auth)/otp/page.tsx
++++ b/src/app/(auth)/otp/page.tsx
+@@ -5,9 +5,9 @@ export default function OtpPage() {
+   return (
+     <Suspense
+       fallback={
+-        <div className="flex min-h-screen items-center justify-center bg-white px-5">
+-          <div className="w-full max-w-sm rounded-3xl border border-gray-100 p-6 text-center shadow-xl">
+-            <p className="text-sm text-gray-500">در حال بارگذاری...</p>
++        <div className="flex min-h-screen items-center justify-center px-5">
++          <div className="glass-content w-full max-w-sm rounded-3xl p-6 text-center">
++            <p className="text-sm text-gray-600">در حال بارگذاری...</p>
+           </div>
+         </div>
+       }
+diff --git a/src/app/(auth)/select-clinic/page.tsx b/src/app/(auth)/select-clinic/page.tsx
+index 210ec33..45744eb 100644
+--- a/src/app/(auth)/select-clinic/page.tsx
++++ b/src/app/(auth)/select-clinic/page.tsx
+@@ -20,21 +20,22 @@ export default async function SelectClinicPage() {
+   const basePath = session.userType === "patient" ? "/patient" : "/clinic";
+ 
+   return (
+-    <div className="mx-auto max-w-md p-6">
+-      <h1 className="mb-6 text-xl font-bold text-gray-900">انتخاب کلینیک</h1>
+-      <div className="space-y-3">
+-        {session.clinics.map((c) => {
+-          return (
+-            <a
+-            
+-              key={c.id}
+-              href={`${basePath}/${c.slug}/dashboard`}
+-              className="block rounded-2xl border border-gray-200 p-4 text-sm hover:border-primary"
+-            >
+-              {c.slug}
+-            </a>
+-          );
+-        })}
++    <div className="mx-auto flex min-h-screen max-w-md items-center p-6">
++      <div className="glass-content w-full rounded-3xl p-6 text-gray-900">
++        <h1 className="mb-6 text-xl font-bold text-gray-900">انتخاب کلینیک</h1>
++        <div className="space-y-3">
++          {session.clinics.map((c) => {
++            return (
++              <a
++                key={c.id}
++                href={`${basePath}/${c.slug}/dashboard`}
++                className="block rounded-2xl border border-gray-200 bg-white/60 p-4 text-sm text-gray-800 backdrop-blur-sm transition hover:border-primary hover:bg-white"
++              >
++                {c.slug}
++              </a>
++            );
++          })}
++        </div>
+       </div>
+     </div>
+   );
+diff --git a/src/app/(clinic)/clinic/[clinicSlug]/layout.tsx b/src/app/(clinic)/clinic/[clinicSlug]/layout.tsx
+index 0167162..363a812 100644
+--- a/src/app/(clinic)/clinic/[clinicSlug]/layout.tsx
++++ b/src/app/(clinic)/clinic/[clinicSlug]/layout.tsx
+@@ -30,7 +30,7 @@ export default function ClinicLayout({
+   const userName = role === "doctor" ? "دکتر آرش نیکنام" : role === "receptionist" ? "نگار حسینی" : "دکتر سارا محمدی";
+ 
+   return (
+-    <div dir="rtl" className="flex min-h-screen flex-col bg-gray-50 lg:flex-row-reverse">
++    <div dir="rtl" className="flex min-h-screen flex-col lg:flex-row-reverse">
+ 
+       <div className="flex-1">
+     
+@@ -41,14 +41,18 @@ export default function ClinicLayout({
+           onToggleSidebar={() => setSidebarOpen((v) => !v)}
+         />
+ 
+-        <main className="p-4 md:p-6">{children}</main>
++        <main className="p-4 md:p-6">
++          <div className="glass-content min-h-[calc(100vh-6rem)] rounded-3xl p-4 text-gray-900 md:p-6">
++            {children}
++          </div>
++        </main>
+       </div>
+ 
+       {/* پس‌زمینه‌ی تیره پشت سایدبار موبایل - با کلیک بسته می‌شود */}
+       {sidebarOpen && (
+         <div
+           onClick={() => setSidebarOpen(false)}
+-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
++          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+         />
+       )}
+ 
+diff --git a/src/app/(patient)/patient/[clinicSlug]/layout.tsx b/src/app/(patient)/patient/[clinicSlug]/layout.tsx
+index 121c352..002c4d5 100644
+--- a/src/app/(patient)/patient/[clinicSlug]/layout.tsx
++++ b/src/app/(patient)/patient/[clinicSlug]/layout.tsx
+@@ -21,9 +21,9 @@ export default async function PatientClinicLayout({
+   ];
+ 
+   return (
+-    <div dir="rtl" className="min-h-screen bg-gray-50">
+-      <header className="flex items-center justify-between border-b bg-white px-4 py-3 md:px-8">
+-        <span className="font-bold text-primary-dark">
++    <div dir="rtl" className="min-h-screen">
++      <header className="glass flex items-center justify-between rounded-none px-4 py-3 md:px-8">
++        <span className="font-bold text-primary-light">
+           {clinic?.clinicSlug ?? "کلینیک"}
+         </span>
+ 
+@@ -35,7 +35,9 @@ export default async function PatientClinicLayout({
+       </header>
+ 
+       <main className="mx-auto w-full max-w-[1600px] px-4 py-6 md:px-8">
+-        {children}
++        <div className="glass-content rounded-3xl p-4 text-gray-900 md:p-6">
++          {children}
++        </div>
+       </main>
+     </div>
+   );
+diff --git a/src/app/(superadmin)/super-admin/layout.tsx b/src/app/(superadmin)/super-admin/layout.tsx
+index c4d1110..788b9ec 100644
+--- a/src/app/(superadmin)/super-admin/layout.tsx
++++ b/src/app/(superadmin)/super-admin/layout.tsx
+@@ -52,22 +52,22 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
+     <>
+       <div className="mb-6 flex items-center justify-between gap-2 lg:justify-start">
+         <div className="text-right leading-tight">
+-          <Leaf className="h-7 w-7 text-primary" />
+-          <div className="text-base font-bold text-gray-900">Beauty Clinic CRM</div>
++          <Leaf className="h-7 w-7 text-primary-light" />
++          <div className="text-base font-bold text-white">Beauty Clinic CRM</div>
+           <div className="text-[11px] text-gray-400">پنل سوپرادمین</div>
+         </div>
+ 
+         {/* دکمه بستن، فقط موبایل */}
+         <button
+           onClick={() => setIsDrawerOpen(false)}
+-          className="rounded-lg p-2 text-gray-400 hover:bg-gray-50 lg:hidden"
++          className="rounded-lg p-2 text-gray-400 hover:bg-white/[0.06] lg:hidden"
+           aria-label="بستن منو"
+         >
+           <X className="h-5 w-5" />
+         </button>
+       </div>
+ 
+-      <nav className="flex flex-1 flex-col gap-1">
++      <nav className="glass-scroll flex flex-1 flex-col gap-1 overflow-y-auto">
+         {NAV_ITEMS.map((item) => {
+           const isActive = pathname === item.href;
+ 
+@@ -75,10 +75,8 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
+             <Link
+               key={item.href}
+               href={item.href}
+-              className={`flex items-center rounded-xl px-4 py-2.5 text-sm transition-colors ${
+-                isActive
+-                  ? "bg-primary-light/15 font-medium text-primary-dark"
+-                  : "text-gray-600 hover:bg-gray-50 hover:text-primary-dark"
++              className={`glass-nav-item flex items-center rounded-xl px-4 py-2.5 text-sm ${
++                isActive ? "active" : ""
+               }`}
+             >
+               <item.icon className="ml-5 h-4 w-4 shrink-0" />
+@@ -96,15 +94,15 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
+           width={120}
+           height={120}
+           unoptimized
+-          className="rounded-full object-cover"
++          className="rounded-full object-cover ring-2 ring-white/10"
+         />
+       </div>
+ 
+       {/* باکس پشتیبانی */}
+-      <div className="mt-4 rounded-2xl bg-primary-light/15 p-4 text-center">
+-        <div className="text-sm font-semibold text-gray-800">نیاز به کمک دارید؟</div>
+-        <p className="mt-1 text-xs text-gray-500">تیم پشتیبانی ما آماده پاسخگویی است.</p>
+-        <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary-dark py-2.5 text-xs font-medium text-white hover:opacity-90">
++      <div className="glass-strong mt-4 rounded-2xl p-4 text-center">
++        <div className="text-sm font-semibold text-white">نیاز به کمک دارید؟</div>
++        <p className="mt-1 text-xs text-gray-400">تیم پشتیبانی ما آماده پاسخگویی است.</p>
++        <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-primary-light/30 bg-primary/80 py-2.5 text-xs font-medium text-white shadow-glow-primary transition hover:bg-primary">
+           <Headset className="h-4 w-4" /> تماس با پشتیبانی
+         </button>
+       </div>
+@@ -112,16 +110,16 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
+   );
+ 
+   return (
+-    <div dir="rtl" className="flex min-h-screen flex-col bg-gray-50 lg:flex-row">
++    <div dir="rtl" className="flex min-h-screen flex-col lg:flex-row">
+       {/* هدر موبایل: لوگو + دکمه همبرگر */}
+-      <header className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3 lg:hidden">
++      <header className="glass flex items-center justify-between rounded-none px-4 py-3 lg:hidden">
+         <div className="flex items-center gap-2">
+-          <Leaf className="h-6 w-6 text-primary" />
+-          <span className="text-sm font-bold text-gray-900">Beauty Clinic CRM</span>
++          <Leaf className="h-6 w-6 text-primary-light" />
++          <span className="text-sm font-bold text-white">Beauty Clinic CRM</span>
+         </div>
+         <button
+           onClick={() => setIsDrawerOpen(true)}
+-          className="rounded-lg border border-gray-200 p-2 text-gray-600"
++          className="rounded-lg border border-white/15 p-2 text-gray-200"
+           aria-label="باز کردن منو"
+         >
+           <Menu className="h-5 w-5" />
+@@ -132,22 +130,26 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
+       {isDrawerOpen && (
+         <div
+           onClick={() => setIsDrawerOpen(false)}
+-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
++          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+           aria-hidden="true"
+         />
+       )}
+ 
+       {/* سایدبار: دسکتاپ ثابت / موبایل دراور کشویی */}
+       <aside
+-        className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85%] flex-col overflow-y-auto bg-white p-5 shadow-xl transition-transform duration-300 ease-in-out
+-        lg:static lg:z-auto lg:w-64 lg:max-w-none lg:translate-x-0 lg:shadow-none lg:border-r lg:border-gray-100
++        className={`glass fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85%] flex-col overflow-y-auto rounded-none p-5 transition-transform duration-300 ease-in-out
++        lg:static lg:z-auto lg:w-64 lg:max-w-none lg:translate-x-0
+         ${isDrawerOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"}`}
+       >
+         {SidebarContent}
+       </aside>
+ 
+       {/* محتوای اصلی */}
+-      <main className="flex-1 overflow-x-hidden p-4 md:p-8">{children}</main>
++      <main className="flex-1 overflow-x-hidden p-4 md:p-8">
++        <div className="glass-content min-h-[calc(100vh-4rem)] rounded-3xl p-4 text-gray-900 md:p-6">
++          {children}
++        </div>
++      </main>
+     </div>
+   );
+ }
+diff --git a/src/app/globals.css b/src/app/globals.css
+index b0379d2..53efa93 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -9,8 +9,8 @@ body {
+ }
+ 
+ body {
+-  background-color: theme("colors.gray.50");
+-  color: theme("colors.gray.900");
++  background-color: theme("colors.abyss.950");
++  color: theme("colors.gray.100");
+ }
+ 
+ .scrollbar-hide {
+@@ -21,3 +21,76 @@ body {
+ .scrollbar-hide::-webkit-scrollbar {
+   display: none; /* Chrome, Safari */
+ }
++
++/* ===================== Liquid Glass Theme ===================== */
++
++@layer components {
++  /* شیشه‌ی تیره: برای سایدبار، تاپ‌بار، مودال‌ها روی بوم تیره */
++  .glass {
++    @apply relative isolate border border-white/10 bg-white/[0.06] shadow-glass backdrop-blur-2xl;
++  }
++  .glass::before {
++    content: "";
++    position: absolute;
++    inset: 0;
++    border-radius: inherit;
++    padding: 1px;
++    background: linear-gradient(
++      135deg,
++      rgba(255, 255, 255, 0.28),
++      rgba(255, 255, 255, 0) 35%,
++      rgba(255, 255, 255, 0) 70%,
++      rgba(255, 255, 255, 0.12)
++    );
++    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
++    -webkit-mask-composite: xor;
++    mask-composite: exclude;
++    pointer-events: none;
++  }
++
++  /* نسخه‌ی پررنگ‌تر شیشه، برای عناصر برجسته (کارت فعال، مودال) */
++  .glass-strong {
++    @apply glass bg-white/[0.1] shadow-glass-lg;
++  }
++
++  /* پنل شیشه‌ای روشن: برای بستر محتوای اصلی صفحات (خوانایی متن تیره حفظ می‌شود) */
++  .glass-content {
++    @apply relative isolate border border-white/60 bg-white/85 shadow-glass-lg backdrop-blur-2xl;
++  }
++
++  /* ورودی‌های فرم روی بستر شیشه‌ای تیره */
++  .glass-input {
++    @apply border border-white/10 bg-white/[0.06] text-gray-100 placeholder:text-gray-500 backdrop-blur-xl transition-colors focus:border-primary-light/50 focus:outline-none focus:ring-2 focus:ring-primary-light/20;
++  }
++
++  /* آیتم ناوبری روی سایدبار/تاپ‌بار شیشه‌ای */
++  .glass-nav-item {
++    @apply text-gray-300 transition-colors hover:bg-white/[0.06] hover:text-white;
++  }
++  .glass-nav-item.active {
++    @apply bg-primary-light/15 font-medium text-primary-light;
++  }
++}
++
++/* بوم پس‌زمینه‌ی متحرک با حباب‌های نوری (Aurora) */
++.aurora-blob {
++  position: absolute;
++  border-radius: 9999px;
++  filter: blur(90px);
++  mix-blend-mode: screen;
++  opacity: 0.55;
++  will-change: transform;
++}
++
++/* اسکرول‌بار نازک و هماهنگ با تم تیره، برای سطوح شیشه‌ای */
++.glass-scroll::-webkit-scrollbar {
++  width: 6px;
++  height: 6px;
++}
++.glass-scroll::-webkit-scrollbar-thumb {
++  background: rgba(255, 255, 255, 0.15);
++  border-radius: 9999px;
++}
++.glass-scroll::-webkit-scrollbar-track {
++  background: transparent;
++}
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index 76114ad..6b71b20 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -1,6 +1,7 @@
+ import type { Metadata } from "next";
+ import "./globals.css";
+ import { Providers } from "./providers";
++import { AuroraBackground } from "@/components/ui/AuroraBackground";
+ 
+ // TODO: فونت Vazirmatn را داخل src/styles/fonts قرار بده و اینجا با next/font/local لود کن
+ import localFont from "next/font/local";
+@@ -33,7 +34,8 @@ export default function RootLayout({
+ }>) {
+   return (
+     <html lang="fa" dir="rtl">
+-      <body className={`${vazir.className} bg-white text-gray-900 antialiased`}>
++      <body className={`${vazir.className} bg-abyss-950 text-gray-100 antialiased`}>
++        <AuroraBackground />
+         <Providers>{children}</Providers>
+       </body>
+     </html>
+diff --git a/src/components/layout/ClinicSidebar.tsx b/src/components/layout/ClinicSidebar.tsx
+index 4bd734e..e8f4611 100644
+--- a/src/components/layout/ClinicSidebar.tsx
++++ b/src/components/layout/ClinicSidebar.tsx
+@@ -27,16 +27,16 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+   );
+ 
+   return (
+-    <aside className="flex h-full w-full shrink-0 flex-col border-b border-gray-100 bg-white p-5  lg:h-screen lg:w-64 lg:sticky lg:top-0 lg:border-b-0 lg:border-l">
++    <aside className="glass flex h-full w-full shrink-0 flex-col rounded-none p-5 lg:h-screen lg:w-64 lg:sticky lg:top-0 lg:rounded-none">
+       <div className="mb-6 flex items-center justify-center gap-2 lg:justify-strat">
+-        <Leaf className="h-7 w-7 text-primary" />
++        <Leaf className="h-7 w-7 text-primary-light" />
+         <div className="text-left leading-tight">
+-          <div className="text-base font-bold text-gray-900">Beauty Clinic CRM</div>
++          <div className="text-base font-bold text-white">Beauty Clinic CRM</div>
+           <div className="text-[11px] text-gray-400">پلتفرم مدیریت کلینیک زیبایی</div>
+         </div>
+       </div>
+ 
+-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto scrollbar-hide">
++      <nav className="glass-scroll flex flex-1 flex-col gap-1 overflow-y-auto">
+         {visibleItems.map((item) => {
+           const hasChildren = !!item.children?.length;
+           const active = isItemActive(item);
+@@ -53,8 +53,7 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+                     }`
+                     : `/clinic/${clinicSlug}/${item.href}`
+                 }
+-                className={`flex items-center  rounded-xl px-4 py-2.5 text-sm transition-colors ${active ? "bg-primary-light/15 font-medium text-primary-dark" : "text-gray-600 hover:bg-gray-50"
+-                  }`}
++                className={`glass-nav-item flex items-center rounded-xl px-4 py-2.5 text-sm ${active ? "active" : ""}`}
+               >
+                 <item.icon className="h-4 w-4 ml-4" />
+                 {item.label}
+@@ -66,8 +65,7 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+             <div key={item.href}>
+               <button
+                 onClick={() => setOpenGroup(isOpen ? null : item.href)}
+-                className={`flex w-full items-center  rounded-xl px-4 py-2.5 text-sm transition-colors ${active ? "bg-primary-light/15 font-medium text-primary-dark" : "text-gray-600 hover:bg-gray-50"
+-                  }`}
++                className={`glass-nav-item flex w-full items-center rounded-xl px-4 py-2.5 text-sm ${active ? "active" : ""}`}
+               >
+ 
+                 <item.icon className="h-4 w-4 ml-4" />
+@@ -80,7 +78,7 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+               </button>
+ 
+               {isOpen && (
+-                <div className="mr-1 mt-1 flex flex-col gap-0.5 border-r border-gray-100 pr-3">
++                <div className="mr-1 mt-1 flex flex-col gap-0.5 border-r border-white/10 pr-3">
+                   {item.children!
+                     .filter((child) => child.roles.includes(role))
+                     .map((child) => {
+@@ -91,8 +89,7 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+                           key={child.href}
+                           onClick={() => onNavigate?.()}
+                           href={childHref}
+-                          className={`flex items-center  rounded-lg px-3 py-2 text-[13px] ${childActive ? "bg-primary-light/15 font-medium text-primary-dark" : "text-gray-500 hover:bg-gray-50"
+-                            }`}
++                          className={`glass-nav-item flex items-center rounded-lg px-3 py-2 text-[13px] ${childActive ? "active" : ""}`}
+                         >
+                           <child.icon className="h-3.5 w-3.5 ml-2" />
+                           {child.label}
+@@ -113,14 +110,14 @@ export function ClinicSidebar({ clinicSlug, role, onNavigate }: ClinicSidebarPro
+           width={120}
+           height={120}
+           unoptimized
+-          className="rounded-full object-cover"
++          className="rounded-full object-cover ring-2 ring-white/10"
+         />
+       </div>
+ 
+-      <div className="mt-3 rounded-2xl bg-primary-light/15 p-4 text-center">
+-        <div className="text-sm font-semibold text-gray-800">نسخه حرفه‌ای</div>
+-        <p className="mt-1 text-xs text-gray-500">همه امکانات برای رشد کسب‌وکار شما</p>
+-        <button className="mt-3 w-full rounded-xl bg-primary-dark py-2.5 text-xs font-medium text-white hover:opacity-90">
++      <div className="glass-strong mt-3 rounded-2xl p-4 text-center">
++        <div className="text-sm font-semibold text-white">نسخه حرفه‌ای</div>
++        <p className="mt-1 text-xs text-gray-400">همه امکانات برای رشد کسب‌وکار شما</p>
++        <button className="mt-3 w-full rounded-xl border border-primary-light/30 bg-primary/80 py-2.5 text-xs font-medium text-white shadow-glow-primary transition hover:bg-primary">
+           ارتقای پلن
+         </button>
+       </div>
+diff --git a/src/components/layout/ClinicSwitcher.tsx b/src/components/layout/ClinicSwitcher.tsx
+index c456200..7387b51 100644
+--- a/src/components/layout/ClinicSwitcher.tsx
++++ b/src/components/layout/ClinicSwitcher.tsx
+@@ -26,7 +26,7 @@ export function ClinicSwitcher({ currentSlug, clinics, basePath }: ClinicSwitche
+     <select
+       value={currentSlug}
+       onChange={(e) => router.push(`/${basePath}/${e.target.value}/dashboard`)}
+-      className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm"
++      className="glass-input rounded-lg px-3 py-1.5 text-sm [&>option]:bg-abyss-900 [&>option]:text-gray-100"
+     >
+       {clinics.map((clinic) => (
+         <option key={clinic.slug} value={clinic.slug}>
+diff --git a/src/components/layout/ClinicTopbar.tsx b/src/components/layout/ClinicTopbar.tsx
+index 5f336a6..38992f0 100644
+--- a/src/components/layout/ClinicTopbar.tsx
++++ b/src/components/layout/ClinicTopbar.tsx
+@@ -41,12 +41,12 @@ export function ClinicTopbar({
+     };
+ 
+     return (
+-        <header className="flex h-16 items-center justify-between border-b border-gray-100 bg-white px-6">
++        <header className="glass flex h-16 items-center justify-between rounded-none px-6">
+             {/* سمت راست */}
+             <div className="flex items-center gap-6">
+                 <button
+                     onClick={onToggleSidebar}
+-                    className="text-gray-600 transition hover:text-primary"
++                    className="text-gray-300 transition hover:text-primary-light"
+                 >
+                     <Menu className="h-6 w-6" />
+                 </button>
+@@ -55,16 +55,16 @@ export function ClinicTopbar({
+             {/* وسط */}
+             <div className="flex items-center gap-4">
+                 {/* باکس تاریخ */}
+-                <div className="flex h-10 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
++                <div className="glass-input flex h-10 items-center overflow-hidden rounded-xl">
+                     <button
+                         onClick={goToToday}
+-                        className="flex items-center gap-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
++                        className="flex items-center gap-2 px-4 text-sm font-medium text-gray-100 hover:bg-white/[0.06]"
+                     >
+                         <ChevronDown className="h-4 w-4" />
+                         امروز
+                     </button>
+ 
+-                    <div className="h-5 w-px bg-gray-200" />
++                    <div className="h-5 w-px bg-white/10" />
+ 
+                     <DatePicker
+                         value={selectedDate}
+@@ -75,10 +75,10 @@ export function ClinicTopbar({
+                         render={(value, openCalendar) => (
+                             <button
+                                 onClick={openCalendar}
+-                                className="flex items-center gap-2 px-4 text-sm text-gray-600 hover:bg-gray-50"
++                                className="flex items-center gap-2 px-4 text-sm text-gray-300 hover:bg-white/[0.06]"
+                             >
+                                 {selectedDate ? selectedDate.format("YYYY/MM/DD") : "انتخاب تاریخ"}
+-                                <CalendarDays className="h-4 w-4 text-gray-500" />
++                                <CalendarDays className="h-4 w-4 text-gray-400" />
+                             </button>
+                         )}
+                     />
+@@ -86,16 +86,16 @@ export function ClinicTopbar({
+ 
+                 {/* تنظیمات */}
+                 {showSettingsIcon && (
+-                    <button className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-50 hover:text-primary">
++                    <button className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-300 transition hover:bg-white/[0.08] hover:text-primary-light">
+                         <Settings className="h-5 w-5" />
+                     </button>
+                 )}
+ 
+                 {/* اعلان */}
+-                <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-50 hover:text-primary">
++                <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-300 transition hover:bg-white/[0.08] hover:text-primary-light">
+                     <Bell className="h-5 w-5" />
+                     {notificationCount > 0 && (
+-                        <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-500 text-[9px] font-medium text-white">
++                        <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-500 text-[9px] font-medium text-white ring-2 ring-abyss-900">
+                             {notificationCount.toLocaleString("fa-IR")}
+                         </span>
+                     )}
+@@ -104,10 +104,10 @@ export function ClinicTopbar({
+ 
+             {/* اطلاعات کاربر */}
+             <div className="flex items-center gap-3">
+-                <ChevronDown className="h-4 w-4 text-gray-400" />
++                <ChevronDown className="h-4 w-4 text-gray-500" />
+ 
+                 <div className="hidden text-right sm:block">
+-                    <p className="text-sm font-semibold text-gray-800">{userName}</p>
++                    <p className="text-sm font-semibold text-gray-100">{userName}</p>
+                     <p className="text-xs text-gray-400">{roleLabel}</p>
+                 </div>
+ 
+@@ -117,7 +117,7 @@ export function ClinicTopbar({
+                     width={50}
+                     height={50}
+                     unoptimized
+-                    className="rounded-full object-cover"
++                    className="rounded-full object-cover ring-2 ring-white/10"
+                 />
+             </div>
+         </header>
+diff --git a/src/components/layout/PatientHeader.tsx b/src/components/layout/PatientHeader.tsx
+index 44b64d1..b0100c3 100644
+--- a/src/components/layout/PatientHeader.tsx
++++ b/src/components/layout/PatientHeader.tsx
+@@ -18,13 +18,13 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
+     const pathname = usePathname();
+ 
+     return (
+-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 bg-white px-4 py-3 md:px-8">
++        <header className="glass flex flex-wrap items-center justify-between gap-4 rounded-none px-4 py-3 md:px-8">
+             {/* لوگو - سمت راست */}
+             <div className="order-1 flex items-center gap-2">
+-                <Leaf className="h-7 w-7 text-primary" />
++                <Leaf className="h-7 w-7 text-primary-light" />
+ 
+                 <div className="text-left leading-tight">
+-                    <div className="text-base font-bold text-gray-900">Beauty Clinic CRM</div>
++                    <div className="text-base font-bold text-white">Beauty Clinic CRM</div>
+                     <div className="text-[11px] text-gray-400">پلتفرم مدیریت کلینیک زیبایی</div>
+                 </div>
+             </div>
+@@ -39,8 +39,8 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
+                             key={item.href}
+                             href={href}
+                             className={`whitespace-nowrap pb-1 ${isActive
+-                                    ? "border-b-2 border-primary font-medium text-primary-dark"
+-                                    : "text-gray-500 hover:text-gray-800"
++                                    ? "border-b-2 border-primary-light font-medium text-primary-light"
++                                    : "text-gray-400 hover:text-white"
+                                 }`}
+                         >
+                             {item.label}
+@@ -51,13 +51,13 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
+ 
+             {/* اعلان‌ها و پروفایل - سمت چپ */}
+             <div className="order-2 flex items-center gap-4 md:order-3">
+-                <button className="relative text-gray-500">
++                <button className="relative text-gray-300 hover:text-white">
+                     <Bell className="h-5 w-5" />
+-                    <span className="absolute -top-1.5 -left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] text-white">
++                    <span className="absolute -top-1.5 -left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] text-white ring-2 ring-abyss-900">
+                         ۲
+                     </span>
+                 </button>
+-                <button className="text-gray-500">
++                <button className="text-gray-300 hover:text-white">
+                     <MessageSquare className="h-5 w-5" />
+                 </button>
+                 <button className="flex items-center gap-1.5">
+@@ -67,10 +67,10 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
+                         width={30}
+                         height={30}
+                         unoptimized
+-                        className="rounded-full object-cover"
++                        className="rounded-full object-cover ring-2 ring-white/10"
+                     />
+-                    <span className="hidden text-sm font-medium text-gray-700 sm:block">سارا محمدی</span>
+-                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
++                    <span className="hidden text-sm font-medium text-gray-200 sm:block">سارا محمدی</span>
++                    <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+                 </button>
+             </div>
+         </header>
+diff --git a/src/components/layout/ReceptionSidebar.tsx b/src/components/layout/ReceptionSidebar.tsx
+index 349f3d7..00c4d8d 100644
+--- a/src/components/layout/ReceptionSidebar.tsx
++++ b/src/components/layout/ReceptionSidebar.tsx
+@@ -17,21 +17,21 @@ export function ReceptionSidebar({ clinicSlug, onNavigate }: ReceptionSidebarPro
+   const pathname = usePathname();
+ 
+   return (
+-    <aside className="flex h-full w-full shrink-0 flex-col border-b border-gray-100 bg-white p-5 lg:h-screen lg:w-64 lg:sticky lg:top-0 lg:border-b-0 lg:border-l">
++    <aside className="glass flex h-full w-full shrink-0 flex-col rounded-none p-5 lg:h-screen lg:w-64 lg:sticky lg:top-0 lg:rounded-none">
+       <div className="mb-4 flex items-center justify-center gap-2 lg:justify-end">
+-        <Leaf className="h-7 w-7 text-primary" />
++        <Leaf className="h-7 w-7 text-primary-light" />
+         <div className="text-left leading-tight">
+-          <div className="text-base font-bold text-gray-900">Beauty Clinic CRM</div>
++          <div className="text-base font-bold text-white">Beauty Clinic CRM</div>
+           <div className="text-[11px] text-gray-400">پلتفرم مدیریت کلینیک زیبایی</div>
+         </div>
+       </div>
+ 
+       {/* برچسب پنل فعلی */}
+-      <div className="mb-3 flex items-center gap-2 rounded-xl bg-primary-light/15 px-4 py-2.5 text-sm font-medium text-primary-dark">
++      <div className="glass-strong mb-3 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-primary-light">
+         <Headset className="h-4 w-4" /> پنل منشی / نوبت‌دهی
+       </div>
+ 
+-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto scrollbar-hide">
++      <nav className="glass-scroll flex flex-1 flex-col gap-1 overflow-y-auto">
+         {RECEPTION_NAV_ITEMS.map((item) => {
+           const href = `/clinic/${clinicSlug}/${item.href}`;
+           const active = pathname === href || pathname.startsWith(href + "/");
+@@ -40,8 +40,7 @@ export function ReceptionSidebar({ clinicSlug, onNavigate }: ReceptionSidebarPro
+               key={item.href}
+               onClick={() => onNavigate?.()}
+               href={href}
+-              className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-colors ${active ? "bg-primary-light/15 font-medium text-primary-dark" : "text-gray-600 hover:bg-gray-50"
+-                }`}
++              className={`glass-nav-item flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm ${active ? "active" : ""}`}
+             >
+               <item.icon className="h-4 w-4" />
+               {item.label}
+@@ -57,14 +56,14 @@ export function ReceptionSidebar({ clinicSlug, onNavigate }: ReceptionSidebarPro
+           width={120}
+           height={120}
+           unoptimized
+-          className="rounded-full object-cover"
++          className="rounded-full object-cover ring-2 ring-white/10"
+         />
+       </div>
+ 
+-      <div className="mt-3 rounded-2xl bg-primary-light/15 p-4 text-center">
+-        <div className="text-sm font-semibold text-gray-800">نسخه حرفه‌ای</div>
+-        <p className="mt-1 text-xs text-gray-500">همه امکانات برای رشد کسب‌وکار شما</p>
+-        <button className="mt-3 w-full rounded-xl bg-primary-dark py-2.5 text-xs font-medium text-white hover:opacity-90">
++      <div className="glass-strong mt-3 rounded-2xl p-4 text-center">
++        <div className="text-sm font-semibold text-white">نسخه حرفه‌ای</div>
++        <p className="mt-1 text-xs text-gray-400">همه امکانات برای رشد کسب‌وکار شما</p>
++        <button className="mt-3 w-full rounded-xl border border-primary-light/30 bg-primary/80 py-2.5 text-xs font-medium text-white shadow-glow-primary transition hover:bg-primary">
+           ارتقای پلن
+         </button>
+       </div>
+diff --git a/src/components/ui/Button.tsx b/src/components/ui/Button.tsx
+index 2cb3045..68c805c 100644
+--- a/src/components/ui/Button.tsx
++++ b/src/components/ui/Button.tsx
+@@ -9,11 +9,16 @@ export function Button({ variant = "primary", className, ...props }: ButtonProps
+   return (
+     <button
+       className={clsx(
+-        "rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50",
+-        variant === "primary" && "bg-primary text-white hover:bg-primary-dark",
+-        variant === "secondary" && "bg-secondary-blue text-gray-900 hover:opacity-90",
+-        variant === "danger" && "bg-danger text-white hover:opacity-90",
+-        variant === "ghost" && "bg-transparent text-gray-700 hover:bg-gray-100",
++        "rounded-xl px-4 py-2 text-sm font-medium backdrop-blur-xl transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50",
++        "border active:scale-[0.98]",
++        variant === "primary" &&
++          "border-primary-light/30 bg-primary/80 text-white shadow-glow-primary hover:bg-primary",
++        variant === "secondary" &&
++          "border-white/15 bg-white/[0.08] text-gray-100 hover:bg-white/[0.14]",
++        variant === "danger" &&
++          "border-danger/30 bg-danger/80 text-white hover:bg-danger",
++        variant === "ghost" &&
++          "border-transparent bg-transparent text-gray-300 hover:border-white/10 hover:bg-white/[0.06]",
+         className
+       )}
+       {...props}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index e43c2f0..73fbed4 100644
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -21,6 +21,44 @@ const config: Config = {
+         danger: "#F87171",
+         success: "#4ADE80",
+         warning: "#FBBF24",
++        // پس‌زمینه‌ی تیره‌ی تم شیشه‌ای (Liquid Glass)
++        abyss: {
++          DEFAULT: "#05070d",
++          950: "#05070d",
++          900: "#0a0e1a",
++          800: "#0f1524",
++        },
++      },
++      boxShadow: {
++        glass: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
++        "glass-sm": "0 4px 16px 0 rgba(0, 0, 0, 0.25)",
++        "glass-lg": "0 20px 60px -10px rgba(0, 0, 0, 0.5)",
++        "glow-primary": "0 0 24px -4px rgba(14, 165, 164, 0.55)",
++      },
++      backdropBlur: {
++        xs: "2px",
++      },
++      keyframes: {
++        float: {
++          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
++          "33%": { transform: "translate(3%, 4%) scale(1.05)" },
++          "66%": { transform: "translate(-2%, -3%) scale(0.97)" },
++        },
++        "float-reverse": {
++          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
++          "33%": { transform: "translate(-4%, -2%) scale(0.96)" },
++          "66%": { transform: "translate(3%, 3%) scale(1.06)" },
++        },
++        shimmer: {
++          "0%": { backgroundPosition: "-200% 0" },
++          "100%": { backgroundPosition: "200% 0" },
++        },
++      },
++      animation: {
++        float: "float 18s ease-in-out infinite",
++        "float-reverse": "float-reverse 22s ease-in-out infinite",
++        "float-slow": "float 30s ease-in-out infinite",
++        shimmer: "shimmer 2.5s linear infinite",
+       },
+     },
+   },
