@@ -13,31 +13,21 @@ import {
   LayoutGrid,
   Check,
   X,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 
 import { superAdminApi } from "@/lib/api/super-admin";
+import { superAdminReportsApi } from "@/lib/api/super-admin-reports";
 
 import {
   getClinicModulesByClinicId,
   updateClinicModuleByClinicId,
+  applyPlanModulesToClinic,
 } from "@/lib/api/super-admin-modules";
 
 import { queryKeys } from "@/lib/query/keys";
-
-const MODULE_LABELS: Record<string, string> = {
-  appointments: "نوبت‌دهی",
-  chat: "چت",
-  consents: "رضایت‌نامه‌ها",
-  files: "فایل‌ها و تصاویر",
-  finance: "مالی",
-  intake: "فرم پذیرش",
-  patients: "مراجعین",
-  reports: "گزارش‌ها",
-  services: "خدمات",
-  sms: "پیامک",
-  video: "تماس تصویری",
-  visits: "جلسات درمان",
-};
+import { MODULE_LABELS } from "@/lib/constants/modules";
 
 export default function SuperAdminModulesPage() {
   const [search, setSearch] = useState("");
@@ -129,6 +119,58 @@ export default function SuperAdminModulesPage() {
           queryKeys.superAdminModules.list(
             selectedClinicId ?? ""
           ),
+      });
+    },
+  });
+
+  // ============================================================
+  // پلن فعلی کلینیک انتخاب‌شده و ماژول‌های شامل آن
+  // ============================================================
+
+  const { data: clinicReport } = useQuery({
+    queryKey: queryKeys.superAdminReports.clinicsReport({
+      clinic_id: selectedClinicId ?? undefined,
+    }),
+    queryFn: () =>
+      superAdminReportsApi.getClinicsReport({
+        clinic_id: selectedClinicId!,
+      }),
+    enabled: !!selectedClinicId,
+  });
+
+  const planName = clinicReport?.items?.[0]?.plan_name ?? null;
+
+  const { data: plans = [] } = useQuery({
+    queryKey: queryKeys.superAdmin.plans.list(),
+    queryFn: superAdminApi.getPlans,
+    enabled: !!selectedClinicId,
+  });
+
+  const currentPlan = useMemo(
+    () => plans.find((p) => p.name === planName) ?? null,
+    [plans, planName]
+  );
+
+  const planModuleKeys = currentPlan?.included_modules ?? [];
+
+  const missingPlanModules = useMemo(
+    () =>
+      planModuleKeys.filter(
+        (key) =>
+          !modules.find((m) => m.moduleKey === key && m.isEnabled)
+      ),
+    [planModuleKeys, modules]
+  );
+
+  const syncMutation = useMutation({
+    mutationFn: () =>
+      applyPlanModulesToClinic(selectedClinicId!, planModuleKeys),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.superAdminModules.list(
+          selectedClinicId ?? ""
+        ),
       });
     },
   });
@@ -284,6 +326,54 @@ export default function SuperAdminModulesPage() {
                 )}
               </div>
 
+              {/* Plan info + sync */}
+              {planName && (
+                <div className="mb-4 flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 dark:border-white/10 dark:bg-white/[0.03] sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-xs text-gray-600 dark:text-gray-300">
+                    پلن فعلی: <span className="font-medium">{planName}</span>
+                    {currentPlan && planModuleKeys.length > 0 && (
+                      <span className="mr-1 text-gray-400 dark:text-gray-500">
+                        — شامل {planModuleKeys.length.toLocaleString("fa-IR")} ماژول
+                      </span>
+                    )}
+                  </div>
+
+                  {currentPlan && planModuleKeys.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => syncMutation.mutate()}
+                      disabled={
+                        syncMutation.isPending ||
+                        missingPlanModules.length === 0
+                      }
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-primary-light/40 bg-primary-light/10 px-3 py-1.5 text-[11px] font-medium text-primary-dark transition hover:bg-primary-light/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-primary-light/30 dark:bg-primary/10 dark:text-primary-light"
+                    >
+                      {syncMutation.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                      {missingPlanModules.length === 0
+                        ? "همه‌ی ماژول‌های پلن فعالن"
+                        : `فعال‌سازی ${missingPlanModules.length.toLocaleString("fa-IR")} ماژول کم‌شده`}
+                    </button>
+                  )}
+
+                  {!currentPlan && (
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                      این پلن هیچ ماژول مشخصی ندارد یا در سیستم پلن‌ها پیدا نشد.
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {!planName && (
+                <div className="mb-4 rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-xs text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                  این کلینیک هیچ پلن اشتراکی ندارد؛ از صفحه‌ی «کلینیک‌ها» یک
+                  پلن براش اختصاص بده.
+                </div>
+              )}
+
               {/* Modules loading */}
               {modulesLoading && (
                 <div className="py-10 text-center text-sm text-gray-400 dark:text-gray-500">
@@ -334,11 +424,17 @@ export default function SuperAdminModulesPage() {
                         {/* Module information */}
                         <div className="min-w-0">
 
-                          <div className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                          <div className="flex items-center gap-1.5 text-sm font-medium text-gray-800 dark:text-gray-100">
                             {MODULE_LABELS[
                               module.moduleKey
                             ] ??
                               module.moduleKey}
+
+                            {planModuleKeys.includes(module.moduleKey) && (
+                              <span className="rounded-full bg-primary-light/20 px-1.5 py-0.5 text-[9px] text-primary-dark dark:bg-primary/10 dark:text-primary-light">
+                                بخشی از پلن
+                              </span>
+                            )}
                           </div>
 
                           <div

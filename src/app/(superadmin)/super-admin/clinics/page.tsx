@@ -13,6 +13,8 @@ import {
   X,
   Loader2,
   ExternalLink,
+  CreditCard,
+  PartyPopper,
 } from "lucide-react";
 
 import {
@@ -23,6 +25,9 @@ import {
 import { ApiError } from "@/lib/api/client";
 
 import { queryKeys } from "@/lib/query/keys";
+import { AssignPlanModal } from "@/components/super-admin/AssignPlanModal";
+import { applyPlanModulesToClinic } from "@/lib/api/super-admin-modules";
+import type { Plan } from "@/lib/api/super-admin";
 
 const STATUS_LABELS: Record<
   Clinic["status"],
@@ -75,6 +80,15 @@ export default function ClinicsListPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // کلینیکی که تازه ساخته شده و باید بلافاصله پلن بگیرد
+  const [justCreatedClinic, setJustCreatedClinic] = useState<Clinic | null>(
+    null
+  );
+
+  // کلینیکی که از جدول، برای تغییر/اختصاص پلن انتخاب شده
+  const [assigningPlanClinic, setAssigningPlanClinic] =
+    useState<Clinic | null>(null);
+
   const queryClient = useQueryClient();
 
   const {
@@ -111,12 +125,59 @@ export default function ClinicsListPage() {
   const createMutation = useMutation({
     mutationFn: superAdminApi.createClinic,
 
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.superAdmin.clinics.list(),
       });
 
       setShowCreateModal(false);
+      // بلافاصله بعد از ساخت کلینیک، مودال اختصاص پلن باز می‌شود
+      setJustCreatedClinic(data.clinic);
+    },
+  });
+
+  /*
+   * اختصاص / تغییر پلن اشتراک یک کلینیک — و به‌دنبالش،
+   * فعال‌سازی خودکار ماژول‌های همان پلن برای این کلینیک
+   */
+  const [lastAppliedModulesCount, setLastAppliedModulesCount] = useState<
+    number | null
+  >(null);
+
+  const assignPlanMutation = useMutation({
+    mutationFn: async ({
+      clinicId,
+      plan,
+    }: {
+      clinicId: string;
+      plan: Plan;
+    }) => {
+      await superAdminApi.assignSubscription(clinicId, plan.id);
+
+      const appliedCount = await applyPlanModulesToClinic(
+        clinicId,
+        plan.included_modules ?? []
+      );
+
+      return { plan, appliedCount };
+    },
+
+    onSuccess: ({ appliedCount }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.superAdmin.clinics.list(),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["super-admin", "modules"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["super-admin", "reports"],
+      });
+
+      setLastAppliedModulesCount(appliedCount);
+      setJustCreatedClinic(null);
+      setAssigningPlanClinic(null);
     },
   });
 
@@ -522,6 +583,32 @@ export default function ClinicsListPage() {
                           </a>
 
                           <button
+                            type="button"
+                            onClick={() => setAssigningPlanClinic(clinic)}
+                            title="اختصاص / تغییر پلن"
+                            className="
+                              inline-flex
+                              items-center
+                              gap-1.5
+                              rounded-lg
+                              border border-gray-200
+                              px-2.5 py-1.5
+                              text-[11px]
+                              text-gray-500
+                              transition
+                              hover:border-gray-300
+                              hover:bg-gray-50
+                              dark:border-white/[0.1]
+                              dark:text-gray-400
+                              dark:hover:border-white/[0.16]
+                              dark:hover:bg-white/[0.05]
+                            "
+                          >
+                            <CreditCard className="h-3 w-3" />
+                            پلن
+                          </button>
+
+                          <button
                           type="button"
                           onClick={() =>
                             statusMutation.mutate({
@@ -674,6 +761,80 @@ export default function ClinicsListPage() {
           isSubmitting={createMutation.isPending}
           error={createError}
         />
+      )}
+
+      {/* بلافاصله بعد از ساخت کلینیک: اختصاص پلن */}
+      {justCreatedClinic && (
+        <div className="fixed inset-x-0 top-6 z-[60] flex justify-center px-4">
+          <div className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs text-white shadow-lg">
+            <PartyPopper className="h-3.5 w-3.5" />
+            کلینیک «{justCreatedClinic.name}» با موفقیت ساخته شد. حالا یک پلن
+            براش انتخاب کن.
+          </div>
+        </div>
+      )}
+
+      {justCreatedClinic && (
+        <AssignPlanModal
+          clinicName={justCreatedClinic.name}
+          title="اختصاص پلن به کلینیک جدید"
+          submitLabel="اختصاص پلن"
+          cancelLabel="بعداً از لیست کلینیک‌ها"
+          onClose={() => setJustCreatedClinic(null)}
+          onSubmit={(plan) =>
+            assignPlanMutation.mutate({
+              clinicId: justCreatedClinic.id,
+              plan,
+            })
+          }
+          isSubmitting={assignPlanMutation.isPending}
+          error={
+            assignPlanMutation.error instanceof Error
+              ? assignPlanMutation.error.message
+              : null
+          }
+        />
+      )}
+
+      {/* اختصاص / تغییر پلن از جدول */}
+      {assigningPlanClinic && (
+        <AssignPlanModal
+          clinicName={assigningPlanClinic.name}
+          title="اختصاص / تغییر پلن"
+          onClose={() => setAssigningPlanClinic(null)}
+          onSubmit={(plan) =>
+            assignPlanMutation.mutate({
+              clinicId: assigningPlanClinic.id,
+              plan,
+            })
+          }
+          isSubmitting={assignPlanMutation.isPending}
+          error={
+            assignPlanMutation.error instanceof Error
+              ? assignPlanMutation.error.message
+              : null
+          }
+        />
+      )}
+
+      {/* پیام موفقیت بعد از اعمال پلن + ماژول‌ها */}
+      {lastAppliedModulesCount !== null && (
+        <div className="fixed inset-x-0 top-6 z-[60] flex justify-center px-4">
+          <div className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs text-white shadow-lg">
+            <PartyPopper className="h-3.5 w-3.5" />
+            {lastAppliedModulesCount > 0
+              ? `پلن اختصاص یافت و ${lastAppliedModulesCount.toLocaleString(
+                  "fa-IR"
+                )} ماژول برای این کلینیک فعال شد.`
+              : "پلن اختصاص یافت."}
+            <button
+              onClick={() => setLastAppliedModulesCount(null)}
+              className="mr-1 rounded-full p-0.5 hover:bg-white/20"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

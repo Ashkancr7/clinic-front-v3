@@ -119,3 +119,26 @@ export async function updateClinicModuleByClinicId(
   );
 }
 
+/**
+ * ماژول‌های یک پلن را روی یک کلینیک اعمال می‌کند: ماژول‌های
+ * included_modules پلن فعال می‌شوند. ماژول‌هایی که کلینیک از قبل
+ * دارد ولی جزو این پلن نیستند دست‌نخورده باقی می‌مانند (این تابع
+ * چیزی را غیرفعال نمی‌کند، فقط اضافه می‌کند).
+ *
+ * برمی‌گرداند: تعداد ماژول‌هایی که با موفقیت فعال شدند.
+ */
+export async function applyPlanModulesToClinic(
+  clinicId: string,
+  moduleKeys: string[]
+): Promise<number> {
+  if (moduleKeys.length === 0) return 0;
+
+  const results = await Promise.allSettled(
+    moduleKeys.map((key) =>
+      updateClinicModuleByClinicId(clinicId, key, true)
+    )
+  );
+
+  return results.filter((r) => r.status === "fulfilled").length;
+}
+

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Check, Pencil, Sparkles, X } from "lucide-react";
 
 import { superAdminApi, type Plan } from "@/lib/api/super-admin";
 import { queryKeys } from "@/lib/query/keys";
+import { MODULE_KEYS, MODULE_LABELS } from "@/lib/constants/modules";
 
 export default function PlansPage() {
   const queryClient = useQueryClient();
@@ -220,7 +221,7 @@ export default function PlansPage() {
                   >
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary-dark dark:text-primary-light" />
 
-                    {module}
+                    {MODULE_LABELS[module] ?? module}
                   </li>
                 ))}
               </ul>
@@ -333,21 +334,18 @@ function PlanFormModal({
     initial?.max_users?.toString() ?? ""
   );
 
-  const [modulesText, setModulesText] = useState(
-    (initial?.included_modules ?? []).join("، ")
+  const [modules, setModules] = useState<string[]>(
+    initial?.included_modules ?? []
   );
+
+  function toggleModule(key: string) {
+    setModules((prev) =>
+      prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]
+    );
+  }
 
   const [isActive, setIsActive] = useState(
     initial?.is_active ?? true
-  );
-
-  const modules = useMemo(
-    () =>
-      modulesText
-        .split(/[،,]/)
-        .map((module) => module.trim())
-        .filter(Boolean),
-    [modulesText]
   );
 
   const handleSubmit = () => {
@@ -578,40 +576,42 @@ function PlanFormModal({
           {/* Modules */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-300">
-              ماژول‌های شامل
+              ماژول‌های شامل این پلن
             </label>
 
-            <textarea
-              value={modulesText}
-              onChange={(event) =>
-                setModulesText(event.target.value)
-              }
-              rows={3}
-              placeholder="چت، نوبت‌دهی، تماس تصویری"
-              className="
-                w-full
-                resize-none
-                rounded-xl
-                border border-gray-200
-                bg-white
-                px-3 py-2.5
-                text-sm text-gray-800
-                outline-none
-                transition
-                placeholder:text-gray-300
-                focus:border-primary
-                focus:ring-2
-                focus:ring-primary/10
-                dark:border-white/10
-                dark:bg-white/[0.04]
-                dark:text-white
-                dark:placeholder:text-gray-600
-                dark:focus:border-primary-light
-              "
-            />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {MODULE_KEYS.map((key) => {
+                const checked = modules.includes(key);
+
+                return (
+                  <label
+                    key={key}
+                    className={`
+                      flex cursor-pointer items-center gap-1.5
+                      rounded-xl border px-2.5 py-2
+                      text-[11px] transition
+                      ${
+                        checked
+                          ? "border-primary bg-primary-light/10 text-primary-dark dark:border-primary-light/40 dark:bg-primary/10 dark:text-primary-light"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/[0.06]"
+                      }
+                    `}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleModule(key)}
+                      className="h-3.5 w-3.5 shrink-0 rounded border-gray-300 text-primary focus:ring-primary dark:border-white/20 dark:bg-white/10"
+                    />
+                    {MODULE_LABELS[key]}
+                  </label>
+                );
+              })}
+            </div>
 
             <p className="mt-1.5 text-[10px] text-gray-400 dark:text-gray-500">
-              ماژول‌ها را با ویرگول فارسی یا انگلیسی جدا کنید.
+              با اختصاص این پلن به یک کلینیک، این ماژول‌ها به‌صورت خودکار
+              برای آن کلینیک فعال می‌شوند.
             </p>
           </div>
 

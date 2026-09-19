@@ -3,10 +3,24 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Pencil, Ban, Phone, MapPin, Info, X, ExternalLink } from "lucide-react";
+import {
+  ArrowRight,
+  Pencil,
+  Ban,
+  Phone,
+  MapPin,
+  Info,
+  X,
+  ExternalLink,
+  CreditCard,
+  XCircle,
+} from "lucide-react";
 
-import { superAdminApi, type Clinic } from "@/lib/api/super-admin";
+import { superAdminApi, type Clinic, type Plan } from "@/lib/api/super-admin";
+import { superAdminReportsApi } from "@/lib/api/super-admin-reports";
 import { queryKeys } from "@/lib/query/keys";
+import { AssignPlanModal } from "@/components/super-admin/AssignPlanModal";
+import { applyPlanModulesToClinic } from "@/lib/api/super-admin-modules";
 
 const STATUS_LABELS: Record<Clinic["status"], { label: string; tone: string }> = {
   active: { label: "فعال", tone: "bg-primary-light/20 text-primary-dark" },
@@ -18,11 +32,21 @@ export default function ClinicDetailPage({ params }: { params: Promise<{ clinicI
   const { clinicId } = use(params);
   const queryClient = useQueryClient();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
   const { data: clinic, isLoading, error } = useQuery({
     queryKey: queryKeys.superAdmin.clinics.detail(clinicId),
     queryFn: () => superAdminApi.getClinic(clinicId),
   });
+
+  // وضعیت اشتراک/پلن فعلی این کلینیک (از گزارش جدول مقایسه‌ای کلینیک‌ها)
+  const { data: clinicReport, isLoading: planLoading } = useQuery({
+    queryKey: queryKeys.superAdminReports.clinicsReport({ clinic_id: clinicId }),
+    queryFn: () => superAdminReportsApi.getClinicsReport({ clinic_id: clinicId }),
+  });
+
+  const planInfo = clinicReport?.items?.[0];
+  const hasActivePlan = planInfo?.subscription_status === "active";
 
   const statusMutation = useMutation({
     mutationFn: (status: Clinic["status"]) => superAdminApi.updateClinicStatus(clinicId, status),
@@ -38,6 +62,42 @@ export default function ClinicDetailPage({ params }: { params: Promise<{ clinicI
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.superAdmin.clinics.detail(clinicId) });
       setShowEditModal(false);
+    },
+  });
+
+  const [appliedModulesCount, setAppliedModulesCount] = useState<
+    number | null
+  >(null);
+
+  const assignPlanMutation = useMutation({
+    mutationFn: async (plan: Plan) => {
+      await superAdminApi.assignSubscription(clinicId, plan.id);
+
+      const appliedCount = await applyPlanModulesToClinic(
+        clinicId,
+        plan.included_modules ?? []
+      );
+
+      return appliedCount;
+    },
+    onSuccess: (appliedCount) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.superAdminReports.clinicsReport({ clinic_id: clinicId }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.superAdminModules.list(clinicId),
+      });
+      setShowPlanModal(false);
+      setAppliedModulesCount(appliedCount);
+    },
+  });
+
+  const cancelPlanMutation = useMutation({
+    mutationFn: () => superAdminApi.cancelSubscription(clinicId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.superAdminReports.clinicsReport({ clinic_id: clinicId }),
+      });
     },
   });
 
@@ -133,6 +193,123 @@ export default function ClinicDetailPage({ params }: { params: Promise<{ clinicI
           )}
         </div>
       </div>
+
+      {/* اشتراک و پلن */}
+      <div className="rounded-2xl border border-gray-100 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-gray-800">اشتراک و پلن</h2>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/super-admin/modules"
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+            >
+              مدیریت ماژول‌ها
+            </Link>
+
+            <button
+              onClick={() => setShowPlanModal(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              {planInfo?.plan_name ? "تغییر پلن" : "اختصاص پلن"}
+            </button>
+
+            {hasActivePlan && (
+              <button
+                onClick={() => {
+                  if (confirm("اشتراک این کلینیک لغو شود؟")) {
+                    cancelPlanMutation.mutate();
+                  }
+                }}
+                disabled={cancelPlanMutation.isPending}
+                className="flex items-center gap-1.5 rounded-xl border border-red-100 px-3 py-1.5 text-xs text-danger hover:bg-red-50 disabled:opacity-50"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                لغو اشتراک
+              </button>
+            )}
+          </div>
+        </div>
+
+        {appliedModulesCount !== null && (
+          <div className="mb-4 flex items-center justify-between rounded-xl bg-primary-light/10 px-3 py-2 text-xs text-primary-dark">
+            <span>
+              {appliedModulesCount > 0
+                ? `پلن اعمال شد و ${appliedModulesCount.toLocaleString(
+                    "fa-IR"
+                  )} ماژول برای این کلینیک فعال شد.`
+                : "پلن اعمال شد."}
+            </span>
+            <button
+              onClick={() => setAppliedModulesCount(null)}
+              className="rounded-full p-0.5 hover:bg-primary/10"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+
+        {planLoading ? (
+          <div className="py-6 text-center text-xs text-gray-400">
+            در حال بارگذاری...
+          </div>
+        ) : planInfo?.plan_name ? (
+          <div className="space-y-3 text-xs">
+            <InfoRow icon={CreditCard} label="پلن فعلی" value={planInfo.plan_name} />
+            <InfoRow
+              icon={Info}
+              label="وضعیت اشتراک"
+              value={
+                planInfo.subscription_status === "active"
+                  ? "فعال"
+                  : planInfo.subscription_status === "trial"
+                  ? "آزمایشی"
+                  : planInfo.subscription_status === "expired"
+                  ? "منقضی‌شده"
+                  : planInfo.subscription_status === "cancelled"
+                  ? "لغوشده"
+                  : (planInfo.subscription_status ?? "—")
+              }
+            />
+            {planInfo.subscription_expires_at && (
+              <InfoRow
+                icon={Info}
+                label="تاریخ انقضا"
+                value={new Date(planInfo.subscription_expires_at).toLocaleDateString("fa-IR")}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <p className="text-xs text-gray-400">
+              این کلینیک هنوز هیچ پلن اشتراکی ندارد.
+            </p>
+            <button
+              onClick={() => setShowPlanModal(true)}
+              className="rounded-xl bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary-dark"
+            >
+              اختصاص پلن
+            </button>
+          </div>
+        )}
+      </div>
+
+      {showPlanModal && (
+        <AssignPlanModal
+          clinicName={clinic.name}
+          currentPlanId={undefined}
+          title={planInfo?.plan_name ? "تغییر پلن" : "اختصاص پلن"}
+          onClose={() => setShowPlanModal(false)}
+          onSubmit={(plan) => assignPlanMutation.mutate(plan)}
+          isSubmitting={assignPlanMutation.isPending}
+          error={
+            assignPlanMutation.error instanceof Error
+              ? assignPlanMutation.error.message
+              : null
+          }
+        />
+      )}
 
       {showEditModal && (
         <EditClinicModal

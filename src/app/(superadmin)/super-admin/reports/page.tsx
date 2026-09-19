@@ -21,21 +21,7 @@ import {
   type ReportExportType,
 } from "@/lib/api/super-admin-reports";
 import { queryKeys } from "@/lib/query/keys";
-
-const MODULE_LABELS: Record<string, string> = {
-  appointments: "نوبت‌دهی",
-  chat: "چت",
-  consents: "رضایت‌نامه‌ها",
-  files: "فایل‌ها و تصاویر",
-  finance: "مالی",
-  intake: "فرم پذیرش",
-  patients: "مراجعین",
-  reports: "گزارش‌ها",
-  services: "خدمات",
-  sms: "پیامک",
-  video: "تماس تصویری",
-  visits: "جلسات درمان",
-};
+import { MODULE_LABELS } from "@/lib/constants/modules";
 
 const PLAN_COLORS = ["#0EA5A4", "#DDD6FE", "#FBCFE8", "#93C5FD", "#FDE68A"];
 
