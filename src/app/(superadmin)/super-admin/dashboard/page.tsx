@@ -6,9 +6,11 @@ import {
   MessageSquare,
   UserPlus,
   Users,
-  Activity,
+  UserCog,
+  CalendarCheck,
   CreditCard,
   Briefcase,
+  Wallet,
   Search,
   SlidersHorizontal,
   MoreHorizontal,
@@ -21,7 +23,6 @@ import {
   LayoutGrid,
   BarChart3,
   Settings,
-  Headset,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -29,36 +30,13 @@ import Link from "next/link";
 import Image from "next/image";
 
 import { superAdminApi, type Clinic } from "@/lib/api/super-admin";
-import { superAdminReportsApi } from "@/lib/api/super-admin-reports";
+import {
+  superAdminReportsApi,
+  overLimitLabels,
+  mergeGrowthPoints,
+  formatGrowthMonth,
+} from "@/lib/api/super-admin-reports";
 import { queryKeys } from "@/lib/query/keys";
-
-// این‌ها هنوز endpoint اختصاصی ندارند؛ فعلاً به‌عنوان placeholder نمایشی هستند
-const EVENTS = [
-  {
-    icon: Briefcase,
-    tone: "bg-primary-light/20 text-primary-dark dark:bg-primary/10 dark:text-primary-light",
-    text: "کلینیک آرامش اشتراک خود را تمدید کرد.",
-    time: "۱۰:۱۵",
-  },
-  {
-    icon: UserPlus,
-    tone: "bg-primary-light/20 text-primary-dark dark:bg-primary/10 dark:text-primary-light",
-    text: "کاربر جدید در کلینیک رویان ثبت‌نام کرد.",
-    time: "۰۹:۴۷",
-  },
-  {
-    icon: MessageSquare,
-    tone: "bg-secondary-pink/40 text-pink-600 dark:bg-pink-500/10 dark:text-pink-300",
-    text: "مصرف پیامک کلینیک بهار از ۸۰٪ عبور کرد.",
-    time: "دیروز ۱۶:۳۰",
-  },
-  {
-    icon: Headset,
-    tone: "bg-secondary-purple/40 text-purple-600 dark:bg-purple-500/10 dark:text-purple-300",
-    text: "درخواست پشتیبانی جدید از کلینیک نیکو",
-    time: "دیروز ۱۴:۱۰",
-  },
-];
 
 const QUICK_ACTIONS = [
   {
@@ -116,17 +94,21 @@ const STATUS_LABELS: Record<
   },
 };
 
-// عدد را فرمت فارسی می‌کند، یا اگر مقدار نامشخص بود «—» برمی‌گرداند
 function fmt(n: number | undefined | null) {
   if (n === undefined || n === null || Number.isNaN(n)) return "—";
   return n.toLocaleString("fa-IR");
+}
+
+function fmtToman(n: number | undefined | null) {
+  if (n === undefined || n === null || Number.isNaN(n)) return "—";
+  return `${n.toLocaleString("fa-IR")} تومان`;
 }
 
 export default function SuperAdminDashboardPage() {
   const [search, setSearch] = useState("");
 
   // ============================================================
-  // کلینیک‌ها
+  // کلینیک‌ها (برای جدول و جستجو)
   // ============================================================
 
   const {
@@ -153,56 +135,59 @@ export default function SuperAdminDashboardPage() {
 
   const previewClinics = filteredClinics.slice(0, 5);
 
-  const clinicsKpi = {
-    icon: Briefcase,
-    tone: "text-primary-dark bg-primary-light/20 dark:text-primary-light dark:bg-primary/10",
-    label: "تعداد کلینیک‌ها",
-    value: clinics.length.toLocaleString("fa-IR"),
-  };
-
   // ============================================================
   // داشبورد کلی (GET /super-admin/dashboard)
   // ============================================================
 
-  const {
-    data: overview,
-    isLoading: overviewLoading,
-  } = useQuery({
+  const { data: overview, isLoading: overviewLoading } = useQuery({
     queryKey: queryKeys.superAdminReports.dashboard(),
     queryFn: superAdminReportsApi.getDashboard,
   });
 
+  const activeSubscriptions = overview?.subscriptions.by_status.active ?? 0;
+
   const KPIS = [
     {
-      icon: Users,
+      icon: Briefcase,
       tone: "text-primary-dark bg-primary-light/20 dark:text-primary-light dark:bg-primary/10",
-      label: "کاربران سیستم",
+      label: "تعداد کلینیک‌ها",
       value: overviewLoading
         ? "…"
-        : fmt(
-            (overview?.active_users_count as number | undefined) ??
-              (overview?.users_count as number | undefined)
-          ),
+        : fmt(overview?.clinics.total ?? clinics.length),
+      caption:
+        overview?.clinics.new_last_30_days !== undefined
+          ? `${fmt(overview.clinics.new_last_30_days)} کلینیک جدید (۳۰ روز اخیر)`
+          : undefined,
     },
     {
-      icon: Activity,
+      icon: UserCog,
+      tone: "text-blue-600 bg-secondary-blue/40 dark:text-blue-300 dark:bg-blue-500/10",
+      label: "کارکنان کلینیک‌ها",
+      value: overviewLoading ? "…" : fmt(overview?.users.staff),
+    },
+    {
+      icon: Users,
       tone: "text-purple-600 bg-secondary-purple/40 dark:text-purple-300 dark:bg-purple-500/10",
-      label: "فعالیت ۳۰ روز اخیر",
-      value: overviewLoading
-        ? "…"
-        : fmt(overview?.recent_activity_count as number | undefined),
+      label: "بیماران ثبت‌شده",
+      value: overviewLoading ? "…" : fmt(overview?.users.patients),
     },
     {
       icon: CreditCard,
       tone: "text-pink-600 bg-secondary-pink/50 dark:text-pink-300 dark:bg-pink-500/10",
       label: "اشتراک‌های فعال",
+      value: overviewLoading ? "…" : fmt(activeSubscriptions),
+      caption:
+        overview?.subscriptions.without_subscription !== undefined
+          ? `${fmt(overview.subscriptions.without_subscription)} کلینیک بدون اشتراک`
+          : undefined,
+    },
+    {
+      icon: Wallet,
+      tone: "text-amber-600 bg-amber-100 dark:text-amber-300 dark:bg-amber-500/10",
+      label: "درآمد ۳۰ روز اخیر",
       value: overviewLoading
         ? "…"
-        : fmt(overview?.active_subscriptions_count as number | undefined),
-      caption:
-        overview?.subscriptions_count !== undefined
-          ? `از کل ${fmt(overview.subscriptions_count as number)} اشتراک`
-          : undefined,
+        : fmtToman(overview?.clinic_revenue_last_30_days),
     },
   ];
 
@@ -223,28 +208,28 @@ export default function SuperAdminDashboardPage() {
   // روند رشد کلینیک‌ها (GET /super-admin/reports/growth)
   // ============================================================
 
-  const { data: growth = [] } = useQuery({
+  const { data: growthReport } = useQuery({
     queryKey: queryKeys.superAdminReports.growthReport(6),
     queryFn: () => superAdminReportsApi.getGrowthReport({ months: 6 }),
   });
 
+  const growthPoints = useMemo(
+    () => mergeGrowthPoints(growthReport),
+    [growthReport]
+  );
+
   const chartW = 320;
   const chartH = 120;
 
-  const growthValues = growth.map(
-    (g) => (g.clinics_count as number | undefined) ?? 0
-  );
-  const maxValue = Math.max(1, ...growthValues);
+  const maxValue = Math.max(1, ...growthPoints.map((p) => p.clinics));
   const stepX =
-    growth.length > 1 ? chartW / (growth.length - 1) : chartW;
+    growthPoints.length > 1 ? chartW / (growthPoints.length - 1) : chartW;
 
-  const coords = growth.map((g, i) => ({
+  const coords = growthPoints.map((p, i) => ({
     x: i * stepX,
     y:
       chartH -
-      (((g.clinics_count as number | undefined) ?? 0) /
-        (maxValue + Math.ceil(maxValue * 0.15) + 1)) *
-        chartH,
+      (p.clinics / (maxValue + Math.ceil(maxValue * 0.15) + 1)) * chartH,
   }));
 
   const linePoints = coords.map((c) => `${c.x},${c.y}`).join(" ");
@@ -299,8 +284,7 @@ export default function SuperAdminDashboardPage() {
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {KPIS.map((kpi) => (
           <div
             key={kpi.label}
@@ -323,33 +307,10 @@ export default function SuperAdminDashboardPage() {
             </div>
 
             <div className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-              {kpi.caption ?? "به‌صورت زنده از سرور"}
+              {kpi.caption ?? (error ? "خطا در دریافت آمار" : "به‌صورت زنده از سرور")}
             </div>
           </div>
         ))}
-
-        {/* تعداد کلینیک‌ها */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 transition-colors dark:border-gray-800 dark:bg-gray-900">
-          <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {clinicsKpi.label}
-            </span>
-
-            <div
-              className={`flex h-9 w-9 items-center justify-center rounded-full ${clinicsKpi.tone}`}
-            >
-              <clinicsKpi.icon className="h-4 w-4" />
-            </div>
-          </div>
-
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isLoading ? "…" : clinicsKpi.value}
-          </div>
-
-          <div className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-            {error ? "خطا در دریافت آمار" : "به‌صورت زنده از سرور"}
-          </div>
-        </div>
       </div>
 
       {/* جدول کلینیک‌ها */}
@@ -520,44 +481,64 @@ export default function SuperAdminDashboardPage() {
         </div>
       </div>
 
-      {/* رویدادها / هشدارهای پلن / نمودار */}
+      {/* فعالیت اخیر / هشدارهای پلن / نمودار */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
-        {/* رویدادها */}
+        {/* فعالیت ۳۰ روز اخیر */}
         <div className="rounded-2xl border border-gray-100 bg-white p-5 transition-colors dark:border-gray-800 dark:bg-gray-900">
           <h3 className="mb-4 text-sm font-bold text-gray-800 dark:text-gray-200">
-            رویدادهای اخیر سیستم
+            فعالیت ۳۰ روز اخیر پلتفرم
           </h3>
 
           <div className="space-y-4">
-            {EVENTS.map((e, i) => (
-              <div
-                key={i}
-                className="flex items-start justify-between gap-2"
-              >
-                <div className="flex items-start gap-2.5">
-                  <div
-                    className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${e.tone}`}
-                  >
-                    <e.icon className="h-3.5 w-3.5" />
-                  </div>
-
-                  <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-300">
-                    {e.text}
-                  </p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-light/20 text-primary-dark dark:bg-primary/10 dark:text-primary-light">
+                  <CalendarCheck className="h-3.5 w-3.5" />
                 </div>
-
-                <span className="shrink-0 whitespace-nowrap text-[10px] text-gray-300 dark:text-gray-600">
-                  {e.time}
-                </span>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  نوبت‌های ثبت‌شده
+                </p>
               </div>
-            ))}
-          </div>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                {overviewLoading
+                  ? "…"
+                  : fmt(overview?.activity_last_30_days.appointments)}
+              </span>
+            </div>
 
-          <button className="mt-4 flex items-center gap-1 text-xs text-primary-dark dark:text-primary-light">
-            <ChevronLeft className="h-3.5 w-3.5" />
-            مشاهده همه رویدادها
-          </button>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary-blue/40 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
+                  <Briefcase className="h-3.5 w-3.5" />
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  جلسات تکمیل‌شده
+                </p>
+              </div>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                {overviewLoading
+                  ? "…"
+                  : fmt(overview?.activity_last_30_days.completed_visits)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary-pink/40 text-pink-600 dark:bg-pink-500/10 dark:text-pink-300">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  پیامک ارسال‌شده
+                </p>
+              </div>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                {overviewLoading
+                  ? "…"
+                  : fmt(overview?.activity_last_30_days.sms_sent)}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* هشدارهای عبور از سقف پلن */}
@@ -589,14 +570,10 @@ export default function SuperAdminDashboardPage() {
               </div>
             )}
 
-            {alerts.slice(0, 4).map((alertClinic, i) => (
+            {alerts.slice(0, 4).map((alertClinic) => (
               <Link
-                key={alertClinic.id ?? i}
-                href={
-                  alertClinic.id
-                    ? `/super-admin/clinics/${alertClinic.id}`
-                    : "/super-admin/clinics"
-                }
+                key={alertClinic.clinic_id}
+                href={`/super-admin/clinics/${alertClinic.clinic_id}`}
                 className="flex items-start gap-2.5"
               >
                 <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
@@ -605,14 +582,11 @@ export default function SuperAdminDashboardPage() {
 
                 <div>
                   <p className="text-xs font-medium leading-relaxed text-gray-700 dark:text-gray-200">
-                    {alertClinic.name ?? "کلینیک نامشخص"}
+                    {alertClinic.clinic_name}
                   </p>
 
                   <p className="mt-0.5 text-[10px] text-gray-400 dark:text-gray-500">
-                    {Array.isArray(alertClinic.exceeded_limits) &&
-                    alertClinic.exceeded_limits.length > 0
-                      ? alertClinic.exceeded_limits.join("، ")
-                      : "عبور از سقف پلن"}
+                    عبور از سقف: {overLimitLabels(alertClinic).join("، ") || "—"}
                   </p>
                 </div>
               </Link>
@@ -639,7 +613,7 @@ export default function SuperAdminDashboardPage() {
             </span>
           </div>
 
-          {growth.length === 0 ? (
+          {growthPoints.length === 0 ? (
             <div className="flex h-[120px] items-center justify-center text-xs text-gray-400 dark:text-gray-500">
               داده‌ای برای نمایش وجود ندارد.
             </div>
@@ -665,16 +639,16 @@ export default function SuperAdminDashboardPage() {
                 />
               ))}
 
-              {growth.map((g, i) => (
+              {growthPoints.map((p, i) => (
                 <text
-                  key={`${g.month}-${i}`}
+                  key={p.month}
                   x={coords[i].x}
                   y={chartH + 16}
                   fontSize="8"
                   fill="#9CA3AF"
                   textAnchor="middle"
                 >
-                  {g.month ?? ""}
+                  {formatGrowthMonth(p.month)}
                 </text>
               ))}
             </svg>

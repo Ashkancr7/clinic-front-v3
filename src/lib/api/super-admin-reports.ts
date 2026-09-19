@@ -2,20 +2,18 @@ import { apiClient } from "./client";
 
 /**
  * =========================================================
- * توجه مهم
+ * توجه
  * =========================================================
  *
- * اسپک OpenAPI برای همه‌ی endpointهای زیر (داشبورد سوپرادمین و
- * گزارش‌های پلتفرم) فقط description دارد و schema دقیق پاسخ
- * مشخص نشده است.
+ * شِیپ اکثر endpointهای این فایل روی بک‌اند واقعی (api.hessjr.com)
+ * تست و تأیید شده. دو مورد هنوز تأیید نشده‌اند و flexible مونده‌اند:
+ * - آیتم‌های پرشده‌ی `expiring_soon` و `by_plan` در subscriptions
+ *   (روی دیتای تست خالی بودن)
+ * - `reports/audit-logs` و `reports/export`
  *
- * فیلدهای interfaceهای زیر بر اساس نام‌گذاری snake_case رایج
- * در بقیه‌ی پروژه حدس زده شده‌اند. هر آبجکت یک index signature
- * دارد تا اگر بک‌اند واقعی اسم فیلد متفاوتی برگرداند، چیزی
- * type-error ندهد و UI بتواند با fallback رندر کند.
- *
- * وقتی پاسخ واقعی بک‌اند را دیدی و اسم فیلدی فرق داشت،
- * کافی‌ست همین‌جا اصلاح کنی؛ بقیه‌ی کد تغییر نمی‌خواهد.
+ * برای این دو مورد، interfaceها یک index signature دارند تا اگر
+ * اسم فیلدی فرق داشت type-error ندهد؛ UI هم با fallback («—»)
+ * رندر می‌کند.
  */
 
 interface LaravelEnvelope<T> {
@@ -100,125 +98,235 @@ function buildQuery(
 }
 
 /* ============================================================
- * Dashboard
+ * Dashboard  —  GET /super-admin/dashboard
  * ============================================================ */
 
 export interface DashboardOverview {
-  clinics_count?: number;
-  active_clinics_count?: number;
-  inactive_clinics_count?: number;
-  suspended_clinics_count?: number;
-  subscriptions_count?: number;
-  active_subscriptions_count?: number;
-  trial_subscriptions_count?: number;
-  users_count?: number;
-  patients_count?: number;
-  recent_activity_count?: number;
-  [key: string]: unknown;
+  clinics: {
+    total: number;
+    by_status: Record<string, number>;
+    new_last_30_days: number;
+  };
+  subscriptions: {
+    by_status: Record<string, number>;
+    expiring_in_30_days: number;
+    without_subscription: number;
+  };
+  users: {
+    staff: number;
+    patients: number;
+  };
+  activity_last_30_days: {
+    appointments: number;
+    completed_visits: number;
+    sms_sent: number;
+  };
+  clinic_revenue_last_30_days: number;
+}
+
+/* ============================================================
+ * Dashboard Alerts  —  GET /super-admin/dashboard/alerts
+ * ============================================================ */
+
+export interface UsageMetric {
+  used: number;
+  limit: number | null;
+  is_unlimited: boolean;
+  usage_percent: number;
+  over_limit: boolean;
 }
 
 export interface DashboardAlertClinic {
-  id: string;
-  name?: string;
+  clinic_id: string;
+  clinic_name: string;
   status?: "active" | "inactive" | "suspended";
   plan_name?: string;
-  usage_percent?: number;
-  exceeded_limits?: string[];
+  subscription_status?: string;
+  users: UsageMetric;
+  storage_mb: UsageMetric;
+  sms_this_month: UsageMetric;
+}
+
+/** فهرست متریک‌هایی که یک کلینیک از سقفشان عبور کرده، به فارسی. */
+export function overLimitLabels(clinic: DashboardAlertClinic): string[] {
+  const labels: string[] = [];
+
+  if (clinic.users?.over_limit) labels.push("کاربران");
+  if (clinic.storage_mb?.over_limit) labels.push("فضای ذخیره‌سازی");
+  if (clinic.sms_this_month?.over_limit) labels.push("پیامک");
+
+  return labels;
+}
+
+/* ============================================================
+ * جدول مقایسه‌ای کلینیک‌ها  —  GET /super-admin/reports/clinics
+ * ============================================================ */
+
+export interface ClinicReportRow {
+  clinic_id: string;
+  name: string;
+  slug?: string;
+  specialty?: string | null;
+  status?: "active" | "inactive" | "suspended";
+  created_at?: string;
+  staff_count?: number;
+  patient_count?: number;
+  appointment_count?: number;
+  completed_visit_count?: number;
+  total_revenue?: number;
+  plan_name?: string | null;
+  subscription_status?: string | null;
+  subscription_expires_at?: string | null;
   [key: string]: unknown;
 }
 
 /* ============================================================
- * Reports
+ * وضعیت اشتراک‌ها  —  GET /super-admin/reports/subscriptions
  * ============================================================ */
 
-export interface ClinicReportRow {
-  id: string;
-  name?: string;
-  status?: "active" | "inactive" | "suspended";
+export interface SubscriptionPlanCount {
+  plan_id?: string;
   plan_name?: string;
-  users_count?: number;
-  patients_count?: number;
-  appointments_count?: number;
-  visits_count?: number;
-  revenue?: number;
+  count?: number;
   [key: string]: unknown;
 }
 
-export interface SubscriptionReportRow {
+export interface SubscriptionExpiringRow {
   clinic_id?: string;
   clinic_name?: string;
-  plan_id?: string;
   plan_name?: string;
-  status?: "trial" | "active" | "expired" | "cancelled";
-  started_at?: string;
-  expires_at?: string | null;
+  expires_at?: string;
   days_remaining?: number;
   [key: string]: unknown;
 }
 
 export interface SubscriptionsReport {
-  by_plan?: Record<string, number>;
-  by_status?: Record<string, number>;
-  expiring_soon?: SubscriptionReportRow[];
-  [key: string]: unknown;
+  by_status: Record<string, number>;
+  by_plan: SubscriptionPlanCount[];
+  expiring_soon: SubscriptionExpiringRow[];
+  estimated_monthly_revenue: number;
 }
+
+/* ============================================================
+ * مصرف کلینیک‌ها  —  GET /super-admin/reports/usage
+ * ============================================================ */
 
 export interface UsageReportRow {
-  clinic_id?: string;
-  clinic_name?: string;
+  clinic_id: string;
+  clinic_name: string;
+  status?: "active" | "inactive" | "suspended";
   plan_name?: string;
-  users_used?: number;
-  users_limit?: number | null;
-  storage_used_mb?: number;
-  storage_limit_mb?: number | null;
-  sms_used?: number;
-  sms_limit?: number | null;
-  [key: string]: unknown;
+  subscription_status?: string;
+  users: UsageMetric;
+  storage_mb: UsageMetric;
+  sms_this_month: UsageMetric;
 }
 
-export interface RevenueReportRow {
-  clinic_id?: string;
-  clinic_name?: string;
-  total_amount?: number;
-  [key: string]: unknown;
+/* ============================================================
+ * درآمد  —  GET /super-admin/reports/revenue
+ * ============================================================ */
+
+export interface RevenueByClinicRow {
+  clinic_id: string;
+  clinic_name: string;
+  total_amount: number;
+  payment_count?: number;
 }
 
 export interface RevenueReport {
-  total?: number;
-  by_clinic?: RevenueReportRow[];
-  by_method?: Record<string, number>;
-  [key: string]: unknown;
+  total_revenue: number;
+  // مقادیر by_method به‌صورت رشته‌ی اعشاری از بک‌اند می‌آید (مثلاً "3500000.00")
+  by_method: Record<string, string | number>;
+  by_clinic: RevenueByClinicRow[];
+  outstanding_balance?: number;
 }
+
+/* ============================================================
+ * پذیرش ماژول‌ها  —  GET /super-admin/reports/modules
+ * ============================================================ */
 
 export interface ModuleAdoptionRow {
   module_key: string;
-  module_label?: string;
-  active_clinics_count?: number;
-  [key: string]: unknown;
+  enabled_clinics: number;
+  configured_clinics?: number;
+  adoption_percent: number;
 }
 
-export interface SmsReportRow {
-  clinic_id?: string;
-  clinic_name?: string;
-  sent_count?: number;
-  delivered_count?: number;
-  failed_count?: number;
-  [key: string]: unknown;
+/* ============================================================
+ * گزارش پیامک  —  GET /super-admin/reports/sms
+ * ============================================================ */
+
+export interface SmsByClinicRow {
+  clinic_id: string;
+  clinic_name: string;
+  total_count: number;
+  delivered_count: number;
+  failed_count: number;
 }
 
 export interface SmsReport {
-  by_status?: Record<string, number>;
-  by_clinic?: SmsReportRow[];
-  [key: string]: unknown;
+  by_status: Record<string, number>;
+  by_clinic: SmsByClinicRow[];
 }
 
-export interface GrowthReportRow {
-  month?: string;
-  clinics_count?: number;
-  patients_count?: number;
-  visits_count?: number;
-  [key: string]: unknown;
+/* ============================================================
+ * روند رشد  —  GET /super-admin/reports/growth
+ *
+ * توجه: پاسخ سه نقشه‌ی جدا (clinics / patients / completed_visits)
+ * برمی‌گرداند که کلیدشان "YYYY-MM" است، و ممکن است ماه‌های هر
+ * نقشه با هم یکی نباشند (فقط ماه‌هایی که رکورد داشته‌اند برمی‌گردند).
+ * ============================================================ */
+
+export interface GrowthReport {
+  from?: string;
+  clinics: Record<string, number>;
+  patients: Record<string, number>;
+  completed_visits: Record<string, number>;
 }
+
+export interface GrowthPoint {
+  month: string;
+  clinics: number;
+  patients: number;
+  completed_visits: number;
+}
+
+/** سه نقشه‌ی جداگانه‌ی growth را در یک آرایه‌ی مرتب و یکدست ادغام می‌کند. */
+export function mergeGrowthPoints(
+  report: GrowthReport | undefined
+): GrowthPoint[] {
+  if (!report) return [];
+
+  const months = new Set<string>([
+    ...Object.keys(report.clinics ?? {}),
+    ...Object.keys(report.patients ?? {}),
+    ...Object.keys(report.completed_visits ?? {}),
+  ]);
+
+  return Array.from(months)
+    .sort()
+    .map((month) => ({
+      month,
+      clinics: report.clinics?.[month] ?? 0,
+      patients: report.patients?.[month] ?? 0,
+      completed_visits: report.completed_visits?.[month] ?? 0,
+    }));
+}
+
+/** برچسب فارسی برای یک کلید ماه به شکل "YYYY-MM"، با رقم فارسی. */
+export function formatGrowthMonth(month: string): string {
+  const [year, m] = month.split("-");
+  if (!year || !m) return month;
+  return `${m}/${year.slice(2)}`.replace(
+    /\d/g,
+    (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]
+  );
+}
+
+/* ============================================================
+ * لاگ عملیات حساس  —  GET /super-admin/reports/audit-logs
+ * (شِیپ دقیق هنوز تأیید نشده — flexible نگه داشته شده)
+ * ============================================================ */
 
 export interface AuditLogRow {
   id: string;
@@ -243,28 +351,22 @@ export type ReportExportType =
   | "audit-logs";
 
 export const superAdminReportsApi = {
-  // --- داشبورد کلی پلتفرم ---
   getDashboard: async () => {
-    const res = await apiClient<
-      LaravelEnvelope<DashboardOverview> | DashboardOverview
-    >("/super-admin/dashboard");
-
+    const res = await apiClient<LaravelEnvelope<DashboardOverview>>(
+      "/super-admin/dashboard"
+    );
     return unwrapItem<DashboardOverview>(res);
   },
 
-  // --- کلینیک‌هایی که از سقف پلن عبور کرده‌اند ---
   getDashboardAlerts: async (
     status?: "active" | "inactive" | "suspended"
   ) => {
-    const res = await apiClient<
-      | LaravelEnvelope<DashboardAlertClinic[]>
-      | DashboardAlertClinic[]
-    >(`/super-admin/dashboard/alerts${buildQuery({ status })}`);
-
+    const res = await apiClient<LaravelEnvelope<DashboardAlertClinic[]>>(
+      `/super-admin/dashboard/alerts${buildQuery({ status })}`
+    );
     return unwrapItem<DashboardAlertClinic[]>(res) ?? [];
   },
 
-  // --- جدول مقایسه‌ای کلینیک‌ها ---
   getClinicsReport: async (
     params: {
       clinic_id?: string;
@@ -275,22 +377,18 @@ export const superAdminReportsApi = {
     const res = await apiClient<unknown>(
       `/super-admin/reports/clinics${buildQuery(params)}`
     );
-
     return unwrapPaginated<ClinicReportRow>(res);
   },
 
-  // --- وضعیت اشتراک‌ها ---
   getSubscriptionsReport: async (
     params: { status?: string; days?: number } = {}
   ) => {
     const res = await apiClient<unknown>(
       `/super-admin/reports/subscriptions${buildQuery(params)}`
     );
-
     return unwrapItem<SubscriptionsReport>(res);
   },
 
-  // --- مصرف کاربر/فایل/پیامک در برابر سقف پلن ---
   getUsageReport: async (
     params: {
       clinic_id?: string;
@@ -301,49 +399,39 @@ export const superAdminReportsApi = {
     const res = await apiClient<unknown>(
       `/super-admin/reports/usage${buildQuery(params)}`
     );
-
     return unwrapPaginated<UsageReportRow>(res);
   },
 
-  // --- درآمد کلینیک‌ها از پرداخت بیماران ---
   getRevenueReport: async (
     params: { from?: string; to?: string; clinic_id?: string } = {}
   ) => {
     const res = await apiClient<unknown>(
       `/super-admin/reports/revenue${buildQuery(params)}`
     );
-
     return unwrapItem<RevenueReport>(res);
   },
 
-  // --- پذیرش ماژول‌ها در کلینیک‌ها ---
   getModulesReport: async () => {
     const res = await apiClient<unknown>(`/super-admin/reports/modules`);
-
     return unwrapItem<ModuleAdoptionRow[]>(res) ?? [];
   },
 
-  // --- گزارش پیامک کل پلتفرم ---
   getSmsReport: async (
     params: { from?: string; to?: string; clinic_id?: string } = {}
   ) => {
     const res = await apiClient<unknown>(
       `/super-admin/reports/sms${buildQuery(params)}`
     );
-
     return unwrapItem<SmsReport>(res);
   },
 
-  // --- روند رشد ماهانه ---
   getGrowthReport: async (params: { months?: number } = {}) => {
     const res = await apiClient<unknown>(
       `/super-admin/reports/growth${buildQuery(params)}`
     );
-
-    return unwrapItem<GrowthReportRow[]>(res) ?? [];
+    return unwrapItem<GrowthReport>(res);
   },
 
-  // --- لاگ سراسری عملیات حساس ---
   getAuditLogs: async (
     params: {
       clinic_id?: string;
@@ -358,13 +446,10 @@ export const superAdminReportsApi = {
     const res = await apiClient<unknown>(
       `/super-admin/reports/audit-logs${buildQuery(params)}`
     );
-
     return unwrapPaginated<AuditLogRow>(res);
   },
 
-  // --- خروجی CSV یک گزارش ---
-  // این endpoint فایل CSV برمی‌گرداند نه JSON، پس نمی‌توانیم
-  // از apiClient معمولی (که همیشه res.json() می‌کند) استفاده کنیم.
+  // این endpoint فایل CSV برمی‌گرداند، نه JSON.
   exportReport: async (payload: {
     report_type: ReportExportType;
     from?: string;
@@ -401,9 +486,7 @@ export const superAdminReportsApi = {
   },
 };
 
-/**
- * کمک‌تابع برای دانلود بلاب CSV در مرورگر.
- */
+/** یک بلاب (مثلاً CSV) را در مرورگر دانلود می‌کند. */
 export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

@@ -8,6 +8,7 @@ import {
   Download,
   Wallet,
   TrendingUp,
+  AlertCircle,
   CreditCard,
   Landmark,
   Loader2,
@@ -34,9 +35,10 @@ const METHOD_ICONS: Record<string, typeof Wallet> = {
   credit: CreditCard,
 };
 
-function fmtToman(n: number | undefined | null) {
-  if (n === undefined || n === null || Number.isNaN(n)) return "—";
-  return `${n.toLocaleString("fa-IR")} تومان`;
+function fmtToman(n: number | string | undefined | null) {
+  const num = typeof n === "string" ? Number(n) : n;
+  if (num === undefined || num === null || Number.isNaN(num)) return "—";
+  return `${num.toLocaleString("fa-IR")} تومان`;
 }
 
 function fmt(n: number | undefined | null) {
@@ -51,7 +53,7 @@ export default function TransactionsPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   // ============================================================
-  // کلینیک‌ها (برای جستجوی نام در جدول درآمد)
+  // کلینیک‌ها (fallback نام در جدول درآمد)
   // ============================================================
 
   const { data: clinics = [] } = useQuery({
@@ -106,13 +108,19 @@ export default function TransactionsPage() {
       icon: Wallet,
       tone: "text-primary-dark bg-primary-light/20 dark:bg-primary/15 dark:text-primary-light",
       label: "درآمد کل بازه انتخاب‌شده",
-      value: isLoading ? "…" : fmtToman(revenue?.total),
+      value: isLoading ? "…" : fmtToman(revenue?.total_revenue),
     },
     {
       icon: TrendingUp,
       tone: "text-purple-600 bg-secondary-purple/40 dark:bg-purple-500/15 dark:text-purple-400",
       label: "تعداد کلینیک‌های درآمدزا",
       value: isLoading ? "…" : fmt(byClinic.length),
+    },
+    {
+      icon: AlertCircle,
+      tone: "text-danger bg-red-50 dark:bg-red-500/10 dark:text-red-400",
+      label: "مانده بدهی",
+      value: isLoading ? "…" : fmtToman(revenue?.outstanding_balance),
     },
   ];
 
@@ -171,7 +179,7 @@ export default function TransactionsPage() {
         ))}
 
         {Object.entries(byMethod)
-          .slice(0, 2)
+          .slice(0, 1)
           .map(([method, amount]) => {
             const Icon = METHOD_ICONS[method] ?? Wallet;
 
@@ -190,13 +198,45 @@ export default function TransactionsPage() {
                   </div>
 
                   <div className="text-xs text-gray-400 dark:text-gray-500">
-                    {METHOD_LABELS[method] ?? method}
+                    پردرآمدترین روش: {METHOD_LABELS[method] ?? method}
                   </div>
                 </div>
               </div>
             );
           })}
       </div>
+
+      {/* By method breakdown */}
+      {Object.keys(byMethod).length > 0 && (
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 dark:border-white/10 dark:bg-white/[0.04]">
+          <h3 className="mb-4 text-sm font-bold text-gray-800 dark:text-gray-100">
+            درآمد به تفکیک روش پرداخت
+          </h3>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {Object.entries(byMethod).map(([method, amount]) => {
+              const Icon = METHOD_ICONS[method] ?? Wallet;
+
+              return (
+                <div
+                  key={method}
+                  className="flex items-center gap-2.5 rounded-xl border border-gray-100 p-3 text-xs dark:border-gray-800"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                  <div>
+                    <div className="text-gray-500 dark:text-gray-400">
+                      {METHOD_LABELS[method] ?? method}
+                    </div>
+                    <div className="font-bold text-gray-800 dark:text-gray-100">
+                      {fmtToman(amount)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Revenue by clinic */}
       <div className="rounded-2xl border border-gray-100 bg-white p-5 dark:border-white/10 dark:bg-white/[0.04]">
@@ -245,24 +285,29 @@ export default function TransactionsPage() {
 
         {!isLoading && !error && (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[500px] text-right text-xs">
+            <table className="w-full min-w-[560px] text-right text-xs">
               <thead>
                 <tr className="border-b border-gray-100 text-gray-400 dark:border-white/[0.07] dark:text-gray-500">
                   <th className="py-2 font-medium">کلینیک</th>
+                  <th className="py-2 font-medium">تعداد پرداخت</th>
                   <th className="py-2 font-medium">درآمد (تومان)</th>
                 </tr>
               </thead>
 
               <tbody>
-                {filteredRows.map((row, i) => (
+                {filteredRows.map((row) => (
                   <tr
-                    key={row.clinic_id ?? i}
+                    key={row.clinic_id}
                     className="border-b border-gray-50 transition-colors hover:bg-gray-50/60 dark:border-white/[0.05] dark:hover:bg-white/[0.03]"
                   >
                     <td className="py-3 font-medium text-gray-700 dark:text-gray-300">
                       {row.clinic_name ??
                         clinics.find((c) => c.id === row.clinic_id)?.name ??
                         "—"}
+                    </td>
+
+                    <td className="py-3 text-gray-500 dark:text-gray-400">
+                      {fmt(row.payment_count)}
                     </td>
 
                     <td className="py-3 text-gray-700 dark:text-gray-300">
@@ -274,7 +319,7 @@ export default function TransactionsPage() {
                 {filteredRows.length === 0 && (
                   <tr>
                     <td
-                      colSpan={2}
+                      colSpan={3}
                       className="py-10 text-center text-sm text-gray-400 dark:text-gray-500"
                     >
                       موردی یافت نشد.

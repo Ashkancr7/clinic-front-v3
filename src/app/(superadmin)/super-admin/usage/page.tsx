@@ -2,10 +2,20 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Database, MessageSquare, Users2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Database,
+  MessageSquare,
+  Users2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 import { superAdminApi } from "@/lib/api/super-admin";
-import { superAdminReportsApi } from "@/lib/api/super-admin-reports";
+import {
+  superAdminReportsApi,
+  type UsageMetric,
+} from "@/lib/api/super-admin-reports";
 import { queryKeys } from "@/lib/query/keys";
 
 function fmt(n: number | undefined | null) {
@@ -13,34 +23,39 @@ function fmt(n: number | undefined | null) {
   return n.toLocaleString("fa-IR");
 }
 
-function usagePercent(used?: number, limit?: number | null) {
-  if (used === undefined || limit === undefined || limit === null) return undefined;
-  if (limit === 0) return 0;
-  return Math.min(100, Math.round((used / limit) * 100));
-}
+function ProgressCell({ metric }: { metric: UsageMetric | undefined }) {
+  if (!metric) {
+    return <span className="text-gray-300 dark:text-gray-700">—</span>;
+  }
 
-function ProgressCell({ used, limit }: { used?: number; limit?: number | null }) {
-  const percent = usagePercent(used, limit);
+  const percent = Math.min(100, metric.usage_percent ?? 0);
 
   return (
-    <div className="min-w-[120px]">
+    <div className="min-w-[130px]">
       <div className="mb-1 flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500">
         <span>
-          {fmt(used)} / {limit === null || limit === undefined ? "نامحدود" : fmt(limit)}
+          {fmt(metric.used)} /{" "}
+          {metric.is_unlimited ? "نامحدود" : fmt(metric.limit)}
         </span>
-        {percent !== undefined && <span>{percent}٪</span>}
+        <span
+          className={
+            metric.over_limit ? "font-bold text-danger dark:text-red-400" : ""
+          }
+        >
+          {metric.usage_percent}٪
+        </span>
       </div>
 
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
         <div
           className={`h-full rounded-full transition-all ${
-            percent !== undefined && percent >= 90
+            metric.over_limit
               ? "bg-danger"
-              : percent !== undefined && percent >= 70
+              : percent >= 70
               ? "bg-amber-400"
               : "bg-primary"
           }`}
-          style={{ width: `${percent ?? 0}%` }}
+          style={{ width: `${percent}%` }}
         />
       </div>
     </div>
@@ -149,7 +164,7 @@ export default function SuperAdminUsagePage() {
 
         {!isLoading && !error && (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-right text-xs">
+            <table className="w-full min-w-[780px] text-right text-xs">
               <thead>
                 <tr className="border-b border-gray-100 text-gray-400 dark:border-gray-800 dark:text-gray-500">
                   <th className="py-2 font-medium">کلینیک</th>
@@ -173,13 +188,13 @@ export default function SuperAdminUsagePage() {
               </thead>
 
               <tbody>
-                {rows.map((row, i) => (
+                {rows.map((row) => (
                   <tr
-                    key={row.clinic_id ?? i}
+                    key={row.clinic_id}
                     className="border-b border-gray-50 dark:border-gray-800"
                   >
                     <td className="py-3 font-medium text-gray-800 dark:text-gray-200">
-                      {row.clinic_name ?? "—"}
+                      {row.clinic_name}
                     </td>
 
                     <td className="py-3 text-gray-500 dark:text-gray-400">
@@ -187,18 +202,15 @@ export default function SuperAdminUsagePage() {
                     </td>
 
                     <td className="py-3">
-                      <ProgressCell used={row.users_used} limit={row.users_limit} />
+                      <ProgressCell metric={row.users} />
                     </td>
 
                     <td className="py-3">
-                      <ProgressCell
-                        used={row.storage_used_mb}
-                        limit={row.storage_limit_mb}
-                      />
+                      <ProgressCell metric={row.storage_mb} />
                     </td>
 
                     <td className="py-3">
-                      <ProgressCell used={row.sms_used} limit={row.sms_limit} />
+                      <ProgressCell metric={row.sms_this_month} />
                     </td>
                   </tr>
                 ))}
