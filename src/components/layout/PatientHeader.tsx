@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +29,12 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 224 });
+
+  const profileWrapperRef = useRef<HTMLDivElement>(null); // فقط دکمه تریگر را نگه می‌دارد
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+  const profilePanelRef = useRef<HTMLDivElement>(null); // پنل پرتال‌شده
 
   const { data: summary } = useQuery({
     queryKey: queryKeys.patientPortal.dashboard(clinicSlug),
@@ -53,28 +59,102 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
   }
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  function updateProfilePosition() {
+    const btn = profileButtonRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const panelWidth = 224; // w-56
+    let left = rect.right - panelWidth;
+    left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
+    setCoords({ top: rect.bottom + 8, left, width: panelWidth });
+  }
+
+  useEffect(() => {
     if (!isProfileOpen) return;
 
+    updateProfilePosition();
+
     function handleClickOutside(event: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-        setIsProfileOpen(false);
-      }
+      const target = event.target as Node;
+      const clickedTrigger = profileWrapperRef.current?.contains(target);
+      const clickedPanel = profilePanelRef.current?.contains(target);
+      if (!clickedTrigger && !clickedPanel) setIsProfileOpen(false);
     }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setIsProfileOpen(false);
     }
+    function handleReposition() {
+      updateProfilePosition();
+    }
 
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleReposition);
+      window.removeEventListener("scroll", handleReposition, true);
     };
   }, [isProfileOpen]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  const profilePanel = isProfileOpen && (
+    <motion.div
+      ref={profilePanelRef}
+      role="menu"
+      initial={{ opacity: 0, y: -6, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.97 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
+      style={{ position: "fixed", top: coords.top, left: coords.left, width: coords.width }}
+      // z-[9999] + پرتال به body: هیچ کارت یا ویجت دیگری در صفحه نمی‌تواند رویش بیاید
+      className="glass-strong z-[9999] origin-top-left overflow-hidden rounded-2xl p-1.5 bg-white dark:bg-[#111827]"
+    >
+      <div className="border-b border-gray-100 px-3 py-2.5 dark:border-white/10">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{displayName}</p>
+        <p className="text-xs text-gray-400">بیمار کلینیک</p>
+      </div>
+
+      {/* «پروفایل من» و «تنظیمات حساب» فعلاً غیرفعال‌اند — هنوز صفحه/endpoint
+          مشخصی برایشان ساخته نشده */}
+      <div className="py-1.5">
+        <button
+          disabled
+          className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-xl px-3 py-2.5 text-right text-sm text-gray-300"
+        >
+          <UserRound className="h-4 w-4 opacity-50" />
+          پروفایل من
+        </button>
+        <button
+          disabled
+          className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-xl px-3 py-2.5 text-right text-sm text-gray-300"
+        >
+          <Settings className="h-4 w-4 opacity-50" />
+          تنظیمات حساب
+        </button>
+      </div>
+
+      <div className="border-t border-gray-100 pt-1.5 dark:border-white/10">
+        <button
+          role="menuitem"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-right text-sm text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+        >
+          <LogOut className="h-4 w-4" />
+          {isLoggingOut ? "در حال خروج..." : "خروج از حساب"}
+        </button>
+      </div>
+    </motion.div>
+  );
 
   return (
     <header className="glass sticky top-0 z-40 rounded-none px-4 md:px-8">
@@ -115,7 +195,7 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-                  <NotificationsDropdown />
+          <NotificationsDropdown />
 
           <Link
             href={`/patient/${clinicSlug}/chat`}
@@ -125,8 +205,9 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
             <MessageSquare className="h-5 w-5" />
           </Link>
 
-          <div ref={profileRef} className="relative">
+          <div ref={profileWrapperRef} className="relative">
             <button
+              ref={profileButtonRef}
               onClick={() => setIsProfileOpen((v) => !v)}
               aria-haspopup="menu"
               aria-expanded={isProfileOpen}
@@ -148,54 +229,7 @@ export function PatientHeader({ clinicSlug }: { clinicSlug: string }) {
               />
             </button>
 
-            <AnimatePresence>
-              {isProfileOpen && (
-                <motion.div
-                  role="menu"
-                  initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
-                  className="glass-strong absolute left-0 top-[calc(100%+8px)] z-50 w-56 origin-top-left overflow-hidden rounded-2xl p-1.5"
-                >
-                  <div className="border-b border-gray-100 px-3 py-2.5 dark:border-white/10">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{displayName}</p>
-                    <p className="text-xs text-gray-400">بیمار کلینیک</p>
-                  </div>
-
-                  {/* «پروفایل من» و «تنظیمات حساب» فعلاً غیرفعال‌اند — هنوز صفحه/endpoint
-                      مشخصی برایشان ساخته نشده */}
-                  <div className="py-1.5">
-                    <button
-                      disabled
-                      className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-xl px-3 py-2.5 text-right text-sm text-gray-300"
-                    >
-                      <UserRound className="h-4 w-4 opacity-50" />
-                      پروفایل من
-                    </button>
-                    <button
-                      disabled
-                      className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-xl px-3 py-2.5 text-right text-sm text-gray-300"
-                    >
-                      <Settings className="h-4 w-4 opacity-50" />
-                      تنظیمات حساب
-                    </button>
-                  </div>
-
-                  <div className="border-t border-gray-100 pt-1.5 dark:border-white/10">
-                    <button
-                      role="menuitem"
-                      onClick={handleLogout}
-                      disabled={isLoggingOut}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-right text-sm text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {isLoggingOut ? "در حال خروج..." : "خروج از حساب"}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {mounted && createPortal(<AnimatePresence>{profilePanel}</AnimatePresence>, document.body)}
           </div>
 
           <button
