@@ -6,19 +6,16 @@ import {
   MessageSquare,
   UserPlus,
   Users,
-  MessageCircle,
+  Activity,
   CreditCard,
   Briefcase,
-  ArrowUp,
-  ArrowDown,
   Search,
   SlidersHorizontal,
   MoreHorizontal,
   ChevronLeft,
-  ChevronDown,
   Images,
   CalendarClock,
-  FolderCog,
+  AlertTriangle,
   Plus,
   FolderPlus,
   LayoutGrid,
@@ -32,51 +29,10 @@ import Link from "next/link";
 import Image from "next/image";
 
 import { superAdminApi, type Clinic } from "@/lib/api/super-admin";
+import { superAdminReportsApi } from "@/lib/api/super-admin-reports";
 import { queryKeys } from "@/lib/query/keys";
 
-// KPI هایی که هنوز endpoint ندارند
-const STATIC_KPIS = [
-  {
-    icon: Users,
-    tone: "text-primary-dark bg-primary-light/20 dark:text-primary-light dark:bg-primary/10",
-    label: "کاربران فعال",
-    value: "۳,۲۸۶",
-    trend: "+۱۵٪",
-    trendUp: true,
-    trendLabel: "نسبت به ماه گذشته",
-  },
-  {
-    icon: MessageCircle,
-    tone: "text-purple-600 bg-secondary-purple/40 dark:text-purple-300 dark:bg-purple-500/10",
-    label: "مصرف پیامک (ماه جاری)",
-    value: "۱۸۴,۶۵۰",
-    trend: "-۴٪",
-    trendUp: false,
-    trendLabel: "نسبت به ماه گذشته",
-    progress: 60,
-    progressTone: "bg-purple-400 dark:bg-purple-500",
-  },
-  {
-    icon: CreditCard,
-    tone: "text-pink-600 bg-secondary-pink/50 dark:text-pink-300 dark:bg-pink-500/10",
-    label: "اشتراک‌های فعال",
-    value: "۲۴",
-    caption: "از کل ۳۲ اشتراک",
-    progress: 75,
-    progressTone: "bg-pink-400 dark:bg-pink-500",
-    progressRight: "۷۵٪",
-  },
-];
-
-const CHART_POINTS = [
-  { month: "دی", value: 12 },
-  { month: "بهمن", value: 16 },
-  { month: "اسفند", value: 20 },
-  { month: "فروردین", value: 27 },
-  { month: "اردیبهشت", value: 30 },
-  { month: "خرداد", value: 35 },
-];
-
+// این‌ها هنوز endpoint اختصاصی ندارند؛ فعلاً به‌عنوان placeholder نمایشی هستند
 const EVENTS = [
   {
     icon: Briefcase,
@@ -110,30 +66,35 @@ const QUICK_ACTIONS = [
     tone: "text-gray-500 bg-gray-100 dark:text-gray-300 dark:bg-gray-800",
     title: "تنظیمات سیستم",
     desc: "تنظیمات عمومی سامانه",
+    href: "/super-admin/settings",
   },
   {
     icon: BarChart3,
     tone: "text-pink-600 bg-secondary-pink/40 dark:text-pink-300 dark:bg-pink-500/10",
     title: "گزارش‌های مالی",
     desc: "مشاهده گزارش مالی کلینیک‌ها",
+    href: "/super-admin/transactions",
   },
   {
     icon: LayoutGrid,
     tone: "text-blue-600 bg-secondary-blue/40 dark:text-blue-300 dark:bg-blue-500/10",
     title: "مدیریت ماژول‌ها",
     desc: "فعال‌سازی و تنظیم ماژول‌ها",
+    href: "/super-admin/modules",
   },
   {
     icon: FolderPlus,
     tone: "text-purple-600 bg-secondary-purple/40 dark:text-purple-300 dark:bg-purple-500/10",
     title: "ایجاد اشتراک",
     desc: "ساخت اشتراک برای کلینیک",
+    href: "/super-admin/plans",
   },
   {
     icon: Plus,
     tone: "text-primary-dark bg-primary-light/20 dark:text-primary-light dark:bg-primary/10",
     title: "افزودن کلینیک جدید",
     desc: "ثبت کلینیک جدید در سیستم",
+    href: "/super-admin/clinics",
   },
 ];
 
@@ -155,20 +116,18 @@ const STATUS_LABELS: Record<
   },
 };
 
+// عدد را فرمت فارسی می‌کند، یا اگر مقدار نامشخص بود «—» برمی‌گرداند
+function fmt(n: number | undefined | null) {
+  if (n === undefined || n === null || Number.isNaN(n)) return "—";
+  return n.toLocaleString("fa-IR");
+}
+
 export default function SuperAdminDashboardPage() {
-  const maxValue = Math.max(...CHART_POINTS.map((p) => p.value));
-  const chartW = 320;
-  const chartH = 120;
-  const stepX = chartW / (CHART_POINTS.length - 1);
-
-  const coords = CHART_POINTS.map((p, i) => ({
-    x: i * stepX,
-    y: chartH - (p.value / (maxValue + 5)) * chartH,
-  }));
-
-  const linePoints = coords.map((c) => `${c.x},${c.y}`).join(" ");
-
   const [search, setSearch] = useState("");
+
+  // ============================================================
+  // کلینیک‌ها
+  // ============================================================
 
   const {
     data: clinics = [],
@@ -201,6 +160,95 @@ export default function SuperAdminDashboardPage() {
     value: clinics.length.toLocaleString("fa-IR"),
   };
 
+  // ============================================================
+  // داشبورد کلی (GET /super-admin/dashboard)
+  // ============================================================
+
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+  } = useQuery({
+    queryKey: queryKeys.superAdminReports.dashboard(),
+    queryFn: superAdminReportsApi.getDashboard,
+  });
+
+  const KPIS = [
+    {
+      icon: Users,
+      tone: "text-primary-dark bg-primary-light/20 dark:text-primary-light dark:bg-primary/10",
+      label: "کاربران سیستم",
+      value: overviewLoading
+        ? "…"
+        : fmt(
+            (overview?.active_users_count as number | undefined) ??
+              (overview?.users_count as number | undefined)
+          ),
+    },
+    {
+      icon: Activity,
+      tone: "text-purple-600 bg-secondary-purple/40 dark:text-purple-300 dark:bg-purple-500/10",
+      label: "فعالیت ۳۰ روز اخیر",
+      value: overviewLoading
+        ? "…"
+        : fmt(overview?.recent_activity_count as number | undefined),
+    },
+    {
+      icon: CreditCard,
+      tone: "text-pink-600 bg-secondary-pink/50 dark:text-pink-300 dark:bg-pink-500/10",
+      label: "اشتراک‌های فعال",
+      value: overviewLoading
+        ? "…"
+        : fmt(overview?.active_subscriptions_count as number | undefined),
+      caption:
+        overview?.subscriptions_count !== undefined
+          ? `از کل ${fmt(overview.subscriptions_count as number)} اشتراک`
+          : undefined,
+    },
+  ];
+
+  // ============================================================
+  // هشدارهای عبور از سقف پلن (GET /super-admin/dashboard/alerts)
+  // ============================================================
+
+  const {
+    data: alerts = [],
+    isLoading: alertsLoading,
+    error: alertsError,
+  } = useQuery({
+    queryKey: queryKeys.superAdminReports.dashboardAlerts(),
+    queryFn: () => superAdminReportsApi.getDashboardAlerts(),
+  });
+
+  // ============================================================
+  // روند رشد کلینیک‌ها (GET /super-admin/reports/growth)
+  // ============================================================
+
+  const { data: growth = [] } = useQuery({
+    queryKey: queryKeys.superAdminReports.growthReport(6),
+    queryFn: () => superAdminReportsApi.getGrowthReport({ months: 6 }),
+  });
+
+  const chartW = 320;
+  const chartH = 120;
+
+  const growthValues = growth.map(
+    (g) => (g.clinics_count as number | undefined) ?? 0
+  );
+  const maxValue = Math.max(1, ...growthValues);
+  const stepX =
+    growth.length > 1 ? chartW / (growth.length - 1) : chartW;
+
+  const coords = growth.map((g, i) => ({
+    x: i * stepX,
+    y:
+      chartH -
+      (((g.clinics_count as number | undefined) ?? 0) /
+        (maxValue + Math.ceil(maxValue * 0.15) + 1)) *
+        chartH,
+  }));
+
+  const linePoints = coords.map((c) => `${c.x},${c.y}`).join(" ");
+
   return (
     <div className="space-y-6">
 
@@ -209,9 +257,11 @@ export default function SuperAdminDashboardPage() {
         <button className="relative rounded-full border border-gray-200 bg-white p-2.5 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800">
           <Bell className="h-4 w-4 text-gray-500 dark:text-gray-300" />
 
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] text-white">
-            ۱
-          </span>
+          {alerts.length > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] text-white">
+              {alerts.length > 9 ? "۹+" : fmt(alerts.length)}
+            </span>
+          )}
         </button>
 
         <button className="rounded-full border border-gray-200 bg-white p-2.5 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800">
@@ -251,7 +301,7 @@ export default function SuperAdminDashboardPage() {
       {/* KPI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-        {STATIC_KPIS.map((kpi) => (
+        {KPIS.map((kpi) => (
           <div
             key={kpi.label}
             className="rounded-2xl border border-gray-100 bg-white p-5 transition-colors dark:border-gray-800 dark:bg-gray-900"
@@ -272,41 +322,9 @@ export default function SuperAdminDashboardPage() {
               {kpi.value}
             </div>
 
-            {kpi.progress !== undefined ? (
-              <div className="mt-3">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-                  <div
-                    className={`h-full rounded-full ${kpi.progressTone}`}
-                    style={{ width: `${kpi.progress}%` }}
-                  />
-                </div>
-
-                <div className="mt-1.5 text-[11px] text-gray-400 dark:text-gray-500">
-                  {kpi.progressRight ?? kpi.caption}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-3 flex items-center gap-1 text-xs">
-                <span
-                  className={`flex items-center gap-0.5 font-medium ${
-                    kpi.trendUp
-                      ? "text-primary-dark dark:text-primary-light"
-                      : "text-danger dark:text-red-400"
-                  }`}
-                >
-                  {kpi.trendUp ? (
-                    <ArrowUp className="h-3 w-3" />
-                  ) : (
-                    <ArrowDown className="h-3 w-3" />
-                  )}
-                  {kpi.trend}
-                </span>
-
-                <span className="text-gray-400 dark:text-gray-500">
-                  {kpi.trendLabel}
-                </span>
-              </div>
-            )}
+            <div className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+              {kpi.caption ?? "به‌صورت زنده از سرور"}
+            </div>
           </div>
         ))}
 
@@ -502,7 +520,7 @@ export default function SuperAdminDashboardPage() {
         </div>
       </div>
 
-      {/* رویدادها / Storage / نمودار */}
+      {/* رویدادها / هشدارهای پلن / نمودار */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
         {/* رویدادها */}
@@ -542,64 +560,71 @@ export default function SuperAdminDashboardPage() {
           </button>
         </div>
 
-        {/* Storage */}
+        {/* هشدارهای عبور از سقف پلن */}
         <div className="rounded-2xl border border-gray-100 bg-white p-5 transition-colors dark:border-gray-800 dark:bg-gray-900">
           <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-            مصرف فضای ذخیره‌سازی
+            کلینیک‌های نزدیک سقف پلن
           </h3>
 
           <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">
-            کل فضای استفاده‌شده از سیستم
+            کلینیک‌هایی که از محدودیت پلن خود عبور کرده‌اند
           </p>
 
-          <div className="my-4 flex justify-center">
-            <div
-              className="relative flex h-28 w-28 items-center justify-center rounded-full"
-              style={{
-                background:
-                  "conic-gradient(#0EA5A4 0 24%, #374151 24% 100%)",
-              }}
-            >
-              <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-white dark:bg-gray-900">
-                <span className="text-lg font-bold text-gray-800 dark:text-white">
-                  ۲۴٪
-                </span>
-
-                <span className="text-[9px] text-gray-400 dark:text-gray-500">
-                  از ۵۰۰ گیگابایت
-                </span>
+          <div className="mt-4 space-y-3">
+            {alertsLoading && (
+              <div className="py-6 text-center text-xs text-gray-400 dark:text-gray-500">
+                در حال بارگذاری...
               </div>
-            </div>
+            )}
+
+            {alertsError && (
+              <div className="py-6 text-center text-xs text-danger dark:text-red-400">
+                خطا در دریافت هشدارها
+              </div>
+            )}
+
+            {!alertsLoading && !alertsError && alerts.length === 0 && (
+              <div className="py-6 text-center text-xs text-gray-400 dark:text-gray-500">
+                فعلاً هیچ کلینیکی از سقف پلن عبور نکرده.
+              </div>
+            )}
+
+            {alerts.slice(0, 4).map((alertClinic, i) => (
+              <Link
+                key={alertClinic.id ?? i}
+                href={
+                  alertClinic.id
+                    ? `/super-admin/clinics/${alertClinic.id}`
+                    : "/super-admin/clinics"
+                }
+                className="flex items-start gap-2.5"
+              >
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium leading-relaxed text-gray-700 dark:text-gray-200">
+                    {alertClinic.name ?? "کلینیک نامشخص"}
+                  </p>
+
+                  <p className="mt-0.5 text-[10px] text-gray-400 dark:text-gray-500">
+                    {Array.isArray(alertClinic.exceeded_limits) &&
+                    alertClinic.exceeded_limits.length > 0
+                      ? alertClinic.exceeded_limits.join("، ")
+                      : "عبور از سقف پلن"}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </div>
 
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                <span className="h-2 w-2 rounded-full bg-primary" />
-                فضای استفاده‌شده
-              </span>
-
-              <span className="text-gray-700 dark:text-gray-300">
-                ۱۲۰ گیگابایت
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                <span className="h-2 w-2 rounded-full bg-gray-200 dark:bg-gray-700" />
-                فضای باقی‌مانده
-              </span>
-
-              <span className="text-gray-700 dark:text-gray-300">
-                ۳۸۰ گیگابایت
-              </span>
-            </div>
-          </div>
-
-          <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-2.5 text-xs text-primary transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-primary-light dark:hover:bg-gray-800">
-            <FolderCog className="h-4 w-4" />
-            مدیریت فضای ذخیره‌سازی
-          </button>
+          <Link
+            href="/super-admin/usage"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-2.5 text-xs text-primary transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-primary-light dark:hover:bg-gray-800"
+          >
+            مشاهده گزارش مصرف
+          </Link>
         </div>
 
         {/* نمودار */}
@@ -609,46 +634,51 @@ export default function SuperAdminDashboardPage() {
               روند رشد کلینیک‌ها
             </h3>
 
-            <button className="flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[11px] text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800">
+            <span className="rounded-lg border border-gray-200 px-2 py-1 text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400">
               ۶ ماه اخیر
-              <ChevronDown className="h-3 w-3" />
-            </button>
+            </span>
           </div>
 
-          <svg
-            viewBox={`-10 0 ${chartW + 20} ${chartH + 25}`}
-            className="w-full"
-          >
-            <polyline
-              points={linePoints}
-              fill="none"
-              stroke="#0EA5A4"
-              strokeWidth="2.5"
-            />
-
-            {coords.map((c, i) => (
-              <circle
-                key={i}
-                cx={c.x}
-                cy={c.y}
-                r="3"
-                fill="#0EA5A4"
+          {growth.length === 0 ? (
+            <div className="flex h-[120px] items-center justify-center text-xs text-gray-400 dark:text-gray-500">
+              داده‌ای برای نمایش وجود ندارد.
+            </div>
+          ) : (
+            <svg
+              viewBox={`-10 0 ${chartW + 20} ${chartH + 25}`}
+              className="w-full"
+            >
+              <polyline
+                points={linePoints}
+                fill="none"
+                stroke="#0EA5A4"
+                strokeWidth="2.5"
               />
-            ))}
 
-            {CHART_POINTS.map((p, i) => (
-              <text
-                key={p.month}
-                x={coords[i].x}
-                y={chartH + 16}
-                fontSize="8"
-                fill="#9CA3AF"
-                textAnchor="middle"
-              >
-                {p.month}
-              </text>
-            ))}
-          </svg>
+              {coords.map((c, i) => (
+                <circle
+                  key={i}
+                  cx={c.x}
+                  cy={c.y}
+                  r="3"
+                  fill="#0EA5A4"
+                />
+              ))}
+
+              {growth.map((g, i) => (
+                <text
+                  key={`${g.month}-${i}`}
+                  x={coords[i].x}
+                  y={chartH + 16}
+                  fontSize="8"
+                  fill="#9CA3AF"
+                  textAnchor="middle"
+                >
+                  {g.month ?? ""}
+                </text>
+              ))}
+            </svg>
+          )}
         </div>
       </div>
 
@@ -660,8 +690,9 @@ export default function SuperAdminDashboardPage() {
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {QUICK_ACTIONS.map((a) => (
-            <button
+            <Link
               key={a.title}
+              href={a.href}
               className="flex flex-col items-start gap-2 rounded-2xl border border-gray-100 bg-white p-4 text-right transition-all hover:shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-gray-800"
             >
               <div
@@ -677,7 +708,7 @@ export default function SuperAdminDashboardPage() {
               <div className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-500">
                 {a.desc}
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </div>

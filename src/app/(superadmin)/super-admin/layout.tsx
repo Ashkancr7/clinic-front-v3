@@ -17,6 +17,8 @@ import {
   Menu,
   X,
   LogOut,
+  Gauge,
+  ShieldAlert,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -52,9 +54,19 @@ const NAV_ITEMS = [
     icon: Receipt,
   },
   {
+    href: "/super-admin/usage",
+    label: "مصرف کلینیک‌ها",
+    icon: Gauge,
+  },
+  {
     href: "/super-admin/reports",
     label: "گزارش‌ها",
     icon: BarChart3,
+  },
+  {
+    href: "/super-admin/audit-logs",
+    label: "لاگ عملیات",
+    icon: ShieldAlert,
   },
   {
     href: "/super-admin/settings",

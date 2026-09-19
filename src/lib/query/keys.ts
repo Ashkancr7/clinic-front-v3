@@ -436,6 +436,42 @@ export const queryKeys = {
   },
 
   // =========================================================
+  // Super Admin Reports & Dashboard
+  // =========================================================
+
+  superAdminReports: {
+    dashboard: () =>
+      ["super-admin", "dashboard"] as const,
+
+    dashboardAlerts: (status?: string) =>
+      ["super-admin", "dashboard", "alerts", status ?? "all"] as const,
+
+    clinicsReport: (filters?: Record<string, unknown>) =>
+      ["super-admin", "reports", "clinics", filters] as const,
+
+    subscriptionsReport: (filters?: Record<string, unknown>) =>
+      ["super-admin", "reports", "subscriptions", filters] as const,
+
+    usageReport: (filters?: Record<string, unknown>) =>
+      ["super-admin", "reports", "usage", filters] as const,
+
+    revenueReport: (filters?: Record<string, unknown>) =>
+      ["super-admin", "reports", "revenue", filters] as const,
+
+    modulesReport: () =>
+      ["super-admin", "reports", "modules"] as const,
+
+    smsReport: (filters?: Record<string, unknown>) =>
+      ["super-admin", "reports", "sms", filters] as const,
+
+    growthReport: (months?: number) =>
+      ["super-admin", "reports", "growth", months ?? 12] as const,
+
+    auditLogs: (filters?: Record<string, unknown>) =>
+      ["super-admin", "reports", "audit-logs", filters] as const,
+  },
+
+  // =========================================================
   // Super Admin Modules
   // =========================================================
 
