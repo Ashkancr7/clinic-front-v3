@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,8 @@ import {
   Stethoscope,
   Sparkles,
   StickyNote,
+  MapPin,
+  ChevronDown,
   X,
   Check,
 } from "lucide-react";
@@ -29,6 +31,8 @@ import { Calendar } from "react-multi-date-picker";
 import DateObject from "react-date-object";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
+
+import Body, { type ExtendedBodyPart } from "react-muscle-highlighter";
 
 import { ApiError } from "@/lib/api/client";
 import { getCurrentClinicUser } from "@/lib/api/session";
@@ -81,6 +85,100 @@ const APPOINTMENT_TYPES = [
   },
 ];
 
+/*
+ * ناحیه‌های بدن (نقشه‌ی بدن برای لیزر / مزوتراپی / تزریق)
+ * نام فارسی اسلاگ‌های پکیج react-muscle-highlighter.
+ * اسلاگ‌هایی که اینجا نیستند با خود اسلاگ نمایش داده می‌شوند؛
+ * فهرست کامل را از تایپ‌های پکیج در node_modules چک کنید.
+ */
+type BodyArea = { slug: string; side?: "left" | "right" };
+
+const BODY_AREA_FA: Record<string, string> = {
+  head: "صورت / سر",
+  neck: "گردن",
+  chest: "قفسه سینه",
+  abs: "شکم",
+  obliques: "پهلو",
+  biceps: "بازو (جلو)",
+  triceps: "بازو (پشت)",
+  forearm: "ساعد",
+  "front-deltoids": "شانه (جلو)",
+  "back-deltoids": "شانه (پشت)",
+  trapezius: "پشت گردن",
+  "upper-back": "پشت (بالا)",
+  "lower-back": "کمر",
+  gluteal: "باسن",
+  adductor: "ران داخلی",
+  quadriceps: "ران (جلو)",
+  hamstring: "ران (پشت)",
+  abductors: "ران بیرونی",
+  calves: "ساق پا",
+  knees: "زانو",
+  hands: "دست",
+  feet: "پا",
+};
+
+const BODY_SIDE_FA = { left: "چپ", right: "راست" } as const;
+
+const bodyAreaLabel = (a: BodyArea) =>
+  `${BODY_AREA_FA[a.slug] ?? a.slug}${a.side ? " " + BODY_SIDE_FA[a.side] : ""
+  }`;
+
+const sameBodyArea = (a: BodyArea, b: BodyArea) =>
+  a.slug === b.slug && a.side === b.side;
+
+/*
+ * قیمت‌ها فعلاً ثابت (نمونه) هستند و بعداً از API گرفته می‌شوند.
+ * قیمت هر ناحیه برای هر سمت جدا حساب می‌شود (ناحیه‌های جفت: چپ و راست).
+ * واحد: تومان
+ */
+const UNPAIRED_AREAS = ["head", "neck", "abs"];
+
+const AREA_PRICES: Record<string, number> = {
+  head: 1_500_000,
+  neck: 800_000,
+  chest: 1_200_000,
+  abs: 1_000_000,
+  obliques: 700_000,
+  biceps: 600_000,
+  triceps: 600_000,
+  forearm: 700_000,
+  "front-deltoids": 500_000,
+  "back-deltoids": 500_000,
+  trapezius: 600_000,
+  "upper-back": 1_200_000,
+  "lower-back": 1_000_000,
+  gluteal: 1_100_000,
+  adductor: 700_000,
+  quadriceps: 1_300_000,
+  hamstring: 1_300_000,
+  abductors: 700_000,
+  calves: 1_000_000,
+  knees: 400_000,
+  hands: 400_000,
+  feet: 400_000,
+};
+
+const DEFAULT_AREA_PRICE = 500_000;
+const FULL_BODY_PRICE = 12_000_000;
+
+const bodyAreaPrice = (a: BodyArea) =>
+  AREA_PRICES[a.slug] ?? DEFAULT_AREA_PRICE;
+
+const formatPrice = (n: number) => `${n.toLocaleString("fa-IR")} تومان`;
+
+// همه‌ی اسلاگ‌های قابل انتخاب در دراپ‌دون
+const ALL_BODY_SLUGS = Object.keys(BODY_AREA_FA);
+
+// یک ناحیه از دراپ‌دون → آیتم‌های انتخاب (جفت‌ها: چپ و راست)
+const zoneToAreas = (slug: string): BodyArea[] =>
+  UNPAIRED_AREAS.includes(slug)
+    ? [{ slug }]
+    : [
+        { slug, side: "left" },
+        { slug, side: "right" },
+      ];
+
 export default function NewAppointmentPage({
   params,
 }: {
@@ -114,6 +212,14 @@ export default function NewAppointmentPage({
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] =
     useState<AvailabilitySlot | null>(null);
+
+  // نقشه‌ی بدن
+  const [bodyAreas, setBodyAreas] = useState<BodyArea[]>([]);
+  const [bodyGender, setBodyGender] = useState<"male" | "female">("female");
+  const [bodySide, setBodySide] = useState<"front" | "back">("front");
+  const [fullBody, setFullBody] = useState(false);
+  const [bodyMenuOpen, setBodyMenuOpen] = useState(false);
+  const bodyMenuRef = useRef<HTMLDivElement>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -197,6 +303,118 @@ export default function NewAppointmentPage({
       ),
     [services, serviceId]
   );
+
+  /*
+   * آیا خدمتِ انتخاب‌شده به «ناحیه‌ی بدن» نیاز دارد؟
+   * فعلاً بر اساس نام خدمت تشخیص می‌دهیم. بهتر است بک‌اند یک فلگ مثل
+   * requiresBodyArea روی خدمت بدهد و اینجا جایگزین شود.
+   */
+  const needsBodyArea =
+    !!selectedService &&
+    /لیزر|مزو|تزریق|بوتاکس|فیلر/.test(selectedService.name);
+
+  useEffect(() => {
+    if (!needsBodyArea) {
+      setBodyAreas([]);
+      setFullBody(false);
+    }
+  }, [needsBodyArea]);
+
+  // بستن دراپ‌دون با کلیک بیرون از آن
+  useEffect(() => {
+    if (!bodyMenuOpen) return;
+
+    const onDown = (e: MouseEvent) => {
+      if (!bodyMenuRef.current?.contains(e.target as Node)) {
+        setBodyMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [bodyMenuOpen]);
+
+  /*
+   * کلیک روی بدن: اگر ناحیه انتخاب شده بود حذف، وگرنه اضافه
+   * (در حالت «فول بادی» کلیک روی بدن غیرفعال است)
+   */
+  const toggleBodyArea = (
+    part: ExtendedBodyPart,
+    s?: "left" | "right"
+  ) => {
+    if (fullBody) return;
+
+    const area: BodyArea = { slug: String(part.slug), side: s };
+
+    setBodyAreas((prev) => {
+      // اگر کل ناحیه (بدون سمت) از دراپ‌دون انتخاب شده بود، کلیک آن را برمی‌دارد
+      const whole = prev.find((a) => a.slug === area.slug && !a.side);
+      if (whole && area.side) return prev.filter((a) => a !== whole);
+
+      return prev.some((a) => sameBodyArea(a, area))
+        ? prev.filter((a) => !sameBodyArea(a, area))
+        : [...prev, area];
+    });
+  };
+
+  // انتخاب/حذف یک ناحیه از دراپ‌دون
+  const toggleZone = (slug: string) => {
+    if (fullBody) {
+      setFullBody(false);
+      setBodyAreas(zoneToAreas(slug));
+      return;
+    }
+
+    setBodyAreas((prev) =>
+      prev.some((a) => a.slug === slug)
+        ? prev.filter((a) => a.slug !== slug)
+        : [...prev, ...zoneToAreas(slug)]
+    );
+  };
+
+  const toggleFullBody = () => {
+    if (fullBody) {
+      setFullBody(false);
+    } else {
+      setFullBody(true);
+      setBodyAreas([]);
+    }
+  };
+
+  /*
+   * داده‌ی هایلایت: آیتم‌های هم‌اسلاگ ادغام می‌شوند تا چپ و راست
+   * هر دو رنگ بگیرند. در حالت فول بادی همه‌ی نواحی رنگ می‌گیرند.
+   */
+  const bodyData = useMemo(() => {
+    if (fullBody) {
+      return ALL_BODY_SLUGS.map((slug) => ({
+        slug,
+        color: "#14b8a6",
+        intensity: 1,
+      })) as ExtendedBodyPart[];
+    }
+
+    const bySlug = new Map<string, Set<string>>();
+
+    bodyAreas.forEach((a) => {
+      const sides = bySlug.get(a.slug) ?? new Set<string>();
+      sides.add(a.side ?? "both");
+      bySlug.set(a.slug, sides);
+    });
+
+    return Array.from(bySlug, ([slug, sides]) => {
+      const only =
+        sides.size === 1 && !sides.has("both")
+          ? ([...sides][0] as "left" | "right")
+          : undefined;
+
+      return { slug, side: only, color: "#14b8a6", intensity: 1 };
+    }) as ExtendedBodyPart[];
+  }, [bodyAreas, fullBody]);
+
+  const bodyTotal = fullBody
+    ? FULL_BODY_PRICE
+    : bodyAreas.reduce((sum, a) => sum + bodyAreaPrice(a), 0);
 
   /*
    * ساعات آزاد پزشک
@@ -336,6 +554,25 @@ export default function NewAppointmentPage({
             ?.defaultDurationMinutes ?? 30
         );
 
+      /*
+       * نواحی بدن فعلاً داخل یادداشت نوبت ذخیره می‌شوند.
+       * اگر بک‌اند فیلد جدا گرفت (مثلاً body_areas)،
+       * فقط همین‌جا و در payload پایین عوض می‌شود.
+       */
+      const areasText = fullBody
+        ? "ناحیه‌ی درمان: فول بادی"
+        : bodyAreas.length
+          ? `نواحی درمان: ${bodyAreas.map(bodyAreaLabel).join("، ")}`
+          : "";
+
+      const priceText = areasText
+        ? `مبلغ تخمینی نواحی: ${formatPrice(bodyTotal)}`
+        : "";
+
+      const finalNotes = [areasText, priceText, notes.trim()]
+        .filter(Boolean)
+        .join("\n");
+
       return createAppointment(
         clinicSlug,
         {
@@ -345,7 +582,7 @@ export default function NewAppointmentPage({
           appointment_type: appointmentType,
           start_time: startTime,
           end_time: endTime,
-          notes: notes.trim() || undefined,
+          notes: finalNotes || undefined,
         }
       );
     },
@@ -1505,6 +1742,342 @@ export default function NewAppointmentPage({
                 />
               </div>
             </div>
+
+            {/* =================================================
+                Body Map (لیزر / مزوتراپی / تزریق)
+            ================================================== */}
+            {needsBodyArea && (
+              <div
+                className={`
+                  rounded-2xl
+                  border border-gray-100
+                  bg-white
+                  p-5
+                  dark:border-white/10
+                  dark:bg-white/[0.06]
+                `}
+              >
+                <h3
+                  className={`
+                    mb-3
+                    flex items-center gap-1.5
+                    text-sm font-bold
+                    text-gray-800
+                    dark:text-gray-100
+                  `}
+                >
+                  <MapPin
+                    className={`
+                      h-4 w-4
+                      text-primary-dark
+                      dark:text-primary-light
+                    `}
+                  />
+
+                  ناحیه‌ی درمان
+                </h3>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {/* Body */}
+                  <div className="flex flex-col items-center">
+                    <div className="mb-2 flex flex-wrap justify-center gap-1">
+                      {(
+                        [
+                          ["female", "زن", bodyGender, setBodyGender],
+                          ["male", "مرد", bodyGender, setBodyGender],
+                          ["front", "جلو", bodySide, setBodySide],
+                          ["back", "پشت", bodySide, setBodySide],
+                        ] as const
+                      ).map(([val, label, current, setter]) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => (setter as (v: string) => void)(val)}
+                          className={`
+                            rounded-lg
+                            px-3 py-1.5
+                            text-xs
+                            transition
+
+                            ${current === val
+                              ? `
+                                  bg-primary-light/20
+                                  font-medium
+                                  text-primary-dark
+                                  dark:bg-primary-light/10
+                                  dark:text-primary-light
+                                `
+                              : `
+                                  text-gray-500
+                                  hover:bg-gray-50
+                                  dark:text-gray-400
+                                  dark:hover:bg-white/10
+                                `
+                            }
+                          `}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <Body
+                      data={bodyData}
+                      gender={bodyGender}
+                      side={bodySide}
+                      scale={1.3}
+                      onBodyPartPress={toggleBodyArea}
+                    />
+                  </div>
+
+                  {/* Dropdown + selected areas */}
+                  <div className="space-y-3">
+                    {/* Dropdown */}
+                    <div className="relative" ref={bodyMenuRef}>
+                      <button
+                        type="button"
+                        onClick={() => setBodyMenuOpen((o) => !o)}
+                        className={`
+                          flex w-full
+                          items-center justify-between
+                          rounded-xl
+                          border border-gray-200
+                          bg-white
+                          px-3 py-2.5
+                          text-xs
+                          text-gray-700
+                          transition
+                          hover:border-primary/30
+                          dark:border-white/10
+                          dark:bg-white/[0.04]
+                          dark:text-gray-200
+                          dark:hover:border-primary-light/30
+                        `}
+                      >
+                        <span>
+                          {fullBody
+                            ? "فول بادی"
+                            : bodyAreas.length > 0
+                              ? `${new Set(bodyAreas.map((a) => a.slug)).size} ناحیه انتخاب شده`
+                              : "انتخاب ناحیه از لیست"}
+                        </span>
+
+                        <ChevronDown
+                          className={`
+                            h-4 w-4
+                            text-gray-400
+                            transition-transform
+                            ${bodyMenuOpen ? "rotate-180" : ""}
+                          `}
+                        />
+                      </button>
+
+                      {bodyMenuOpen && (
+                        <div
+                          className={`
+                            absolute
+                            z-30
+                            mt-1
+                            max-h-72
+                            w-full
+                            overflow-y-auto
+                            rounded-xl
+                            border border-gray-100
+                            bg-white
+                            p-1
+                            shadow-lg
+                            dark:border-white/10
+                            dark:bg-[#11151c]
+                          `}
+                        >
+                          {/* Full body */}
+                          <button
+                            type="button"
+                            onClick={toggleFullBody}
+                            className={`
+                              flex w-full
+                              items-center justify-between
+                              rounded-lg
+                              px-3 py-2.5
+                              text-right
+                              text-xs
+                              font-semibold
+                              transition
+
+                              ${fullBody
+                                ? "bg-primary-light/15 text-primary-dark dark:bg-primary-light/10 dark:text-primary-light"
+                                : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/10"
+                              }
+                            `}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              {fullBody && <Check className="h-3.5 w-3.5" />}
+                              فول بادی
+                            </span>
+
+                            <span className="text-[10px] font-normal text-gray-400 dark:text-gray-500">
+                              {formatPrice(FULL_BODY_PRICE)}
+                            </span>
+                          </button>
+
+                          <div className="my-1 border-t border-gray-100 dark:border-white/10" />
+
+                          {ALL_BODY_SLUGS.map((slug) => {
+                            const selected =
+                              !fullBody &&
+                              bodyAreas.some((a) => a.slug === slug);
+
+                            return (
+                              <button
+                                key={slug}
+                                type="button"
+                                onClick={() => toggleZone(slug)}
+                                className={`
+                                  flex w-full
+                                  items-center justify-between
+                                  rounded-lg
+                                  px-3 py-2
+                                  text-right
+                                  text-xs
+                                  transition
+
+                                  ${selected
+                                    ? "bg-primary-light/15 text-primary-dark dark:bg-primary-light/10 dark:text-primary-light"
+                                    : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/10"
+                                  }
+                                `}
+                              >
+                                <span className="flex items-center gap-1.5">
+                                  {selected && <Check className="h-3.5 w-3.5" />}
+                                  {BODY_AREA_FA[slug]}
+                                </span>
+
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                                  {formatPrice(
+                                    AREA_PRICES[slug] ?? DEFAULT_AREA_PRICE
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <p
+                      className={`
+                        text-[11px]
+                        text-gray-400
+                        dark:text-gray-500
+                      `}
+                    >
+                      {fullBody
+                        ? "برای انتخاب ناحیه‌ی خاص، فول بادی را بردارید."
+                        : "از لیست یا با کلیک روی بدن ناحیه اضافه یا حذف کنید."}
+                    </p>
+
+                    {/* Selected chips */}
+                    {fullBody ? (
+                      <div className="flex flex-wrap gap-2">
+                        <span
+                          className={`
+                            flex items-center gap-1
+                            rounded-full
+                            bg-primary-light/15
+                            px-2.5 py-1
+                            text-[11px]
+                            text-primary-dark
+                            dark:bg-primary-light/10
+                            dark:text-primary-light
+                          `}
+                        >
+                          فول بادی
+                          <button
+                            type="button"
+                            onClick={() => setFullBody(false)}
+                            aria-label="حذف فول بادی"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      </div>
+                    ) : bodyAreas.length === 0 ? (
+                      <p
+                        className={`
+                          text-[11px]
+                          text-gray-300
+                          dark:text-gray-600
+                        `}
+                      >
+                        هنوز ناحیه‌ای انتخاب نشده است.
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {bodyAreas.map((area) => (
+                          <span
+                            key={`${area.slug}:${area.side ?? "both"}`}
+                            className={`
+                              flex items-center gap-1
+                              rounded-full
+                              bg-primary-light/15
+                              px-2.5 py-1
+                              text-[11px]
+                              text-primary-dark
+                              dark:bg-primary-light/10
+                              dark:text-primary-light
+                            `}
+                          >
+                            {bodyAreaLabel(area)}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setBodyAreas((prev) =>
+                                  prev.filter(
+                                    (a) => !sameBodyArea(a, area)
+                                  )
+                                )
+                              }
+                              aria-label="حذف ناحیه"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Total */}
+                    {(fullBody || bodyAreas.length > 0) && (
+                      <div
+                        className={`
+                          flex items-center justify-between
+                          rounded-xl
+                          bg-gray-50
+                          px-3 py-2.5
+                          text-xs
+                          dark:bg-white/[0.05]
+                        `}
+                      >
+                        <span className="text-gray-500 dark:text-gray-400">
+                          جمع نواحی انتخابی
+                        </span>
+
+                        <span
+                          className={`
+                            font-semibold
+                            text-primary-dark
+                            dark:text-primary-light
+                          `}
+                        >
+                          {formatPrice(bodyTotal)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* =================================================
                 Actions
