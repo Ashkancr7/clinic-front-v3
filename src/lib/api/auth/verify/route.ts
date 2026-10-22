@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.API_URL ?? "https://api.hessjr.com/api/v1";
+const API_URL = process.env.API_URL ?? "https://clinicapi.nistiman.ir/api/v1";
 const cookieOpts = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",

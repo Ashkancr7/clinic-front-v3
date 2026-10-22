@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 const API_URL =
-  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "https://api.hessjr.com/api/v1";
+  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "https://clinicapi.nistiman.ir/api/v1";
 
 async function forward(
   req: NextRequest,

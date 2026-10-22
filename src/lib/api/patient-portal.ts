@@ -124,6 +124,8 @@ export interface PatientAppointment {
   /** شناسه‌ی پرونده‌ی بیمار — برای endpointهایی مثل /invoices?patient_id= لازم است */
   patientId: string | null;
   serviceId: string;
+  /** شناسه‌ی پزشک نوبت — برای پیشنهاد «پزشک مورد نظر» در درخواست نوبت جدید */
+  doctorId: string | null;
   startTime: string;
   endTime: string;
   serviceName: string;
@@ -142,6 +144,8 @@ function mapPatientAppointment(a: Record<string, unknown>): PatientAppointment {
     id: String(a.id ?? ""),
     patientId: pickId(a.patient_id, patient?.id),
     serviceId: String(service?.id ?? a.service_id ?? ""),
+    // بک‌اند شناسه‌ی پزشک را زیر کلید مشخصی تضمین نکرده؛ چند حالت محتمل بررسی می‌شود.
+    doctorId: pickId(doctor?.id, doctor?.user_id, a.doctor_user_id, a.doctor_id),
     startTime: String(a.start_time ?? ""),
     endTime: String(a.end_time ?? ""),
     serviceName: (service?.name as string | undefined) ?? "-",
@@ -163,6 +167,8 @@ export async function getPatientAppointments(clinicSlug: string): Promise<Patien
 
 export interface RequestAppointmentPayload {
   serviceId: string;
+  /** پزشک مورد نظر (اختیاری) — به‌صورت doctor_user_id ارسال می‌شود */
+  doctorId?: string;
   startTime: string; // ISO, e.g. new Date(...).toISOString()
   notes?: string;
 }
@@ -176,6 +182,7 @@ export async function requestPatientAppointment(
     method: "POST",
     body: JSON.stringify({
       service_id: payload.serviceId,
+      ...(payload.doctorId ? { doctor_user_id: payload.doctorId } : {}),
       start_time: payload.startTime,
       notes: payload.notes ?? "",
     }),
@@ -186,6 +193,7 @@ export async function requestPatientAppointment(
     id: String(data.id ?? ""),
     patientId: pickId(data.patient_id),
     serviceId: String(data.service_id ?? payload.serviceId ?? ""),
+    doctorId: pickId(data.doctor_user_id, data.doctor_id, payload.doctorId),
     startTime: String(data.start_time ?? ""),
     endTime: String(data.end_time ?? ""),
     serviceName: "-",
